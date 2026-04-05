@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Drivetrain Trading Management Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/lucide-react@0.383.0/dist/umd/lucide-react.min.js"></script>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; background: #030712; font-family: 'Montserrat', sans-serif; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #111827; }
+::-webkit-scrollbar-thumb { background: #D7261E; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef, useMemo } = React;
+const { Package, FileText, Truck, History, Download, Plus, Trash2, Search, Camera, X, ChevronDown, ChevronUp, AlertTriangle, Check, Upload, Type, ScanLine, TrendingUp, Box, ShieldAlert, Building2, Mail, Phone, Filter, Save, Zap, ClipboardList } = lucideReact;
+
+const CUR = [{ c: “AED”, s: “د.إ” }, { c: “USD”, s: “$” }, { c: “EUR”, s: “€” }, { c: “GBP”, s: “£” }, { c: “SAR”, s: “﷼” }];
+const uid = () => Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+const td = () => new Date().toISOString().split(“T”)[0];
+const SEEDS = [
+{ id: “s1”, brand: “Toyota”, engineNo: “2GR-FE-78441”, qty: 1, status: “Available”, purchasePrice: 4500, sellingPrice: 7200, datePurchased: “2025-11-15”, dateSold: “”, supplier: “Al Futtaim Motors” },
+{ id: “s2”, brand: “Nissan”, engineNo: “VQ35DE-91022”, qty: 1, status: “Available”, purchasePrice: 3800, sellingPrice: 6100, datePurchased: “2025-12-01”, dateSold: “”, supplier: “Gulf Engines Co” },
+{ id: “s3”, brand: “BMW”, engineNo: “N55B30-44891”, qty: 1, status: “Sold”, purchasePrice: 6200, sellingPrice: 9800, datePurchased: “2025-10-20”, dateSold: “2026-01-10”, supplier: “Euro Parts DMCC” },
+{ id: “s4”, brand: “Mercedes”, engineNo: “M276-DE35-55120”, qty: 1, status: “Available”, purchasePrice: 7100, sellingPrice: 11500, datePurchased: “2026-01-05”, dateSold: “”, supplier: “Al Futtaim Motors” },
+];
+const SSUP = [
+{ id: “sp1”, name: “Al Futtaim Motors”, phone: “+971-50-1234567”, email: “sales@alfuttaim.ae” },
+{ id: “sp2”, name: “Gulf Engines Co”, phone: “+971-55-9876543”, email: “info@gulfengines.com” },
+{ id: “sp3”, name: “Euro Parts DMCC”, phone: “+971-52-4561230”, email: “orders@europarts.ae” },
+];
+
+function useToast() {
+const [items, setItems] = useState([]);
+const toast = useCallback((msg, type = “success”) => { const id = uid(); setItems(p => […p, { id, msg, type }]); setTimeout(() => setItems(p => p.filter(x => x.id !== id)), 3000); }, []);
+const dismiss = useCallback(id => setItems(p => p.filter(x => x.id !== id)), []);
+return { items, toast, dismiss };
+}
+
+function Toasts({ items, dismiss }) {
+return (<div style={{position:‘fixed’,top:56,right:8,zIndex:9999,display:‘flex’,flexDirection:‘column’,gap:8,fontFamily:‘Montserrat’}}>{items.map(x => (
+<div key={x.id} className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-bold uppercase shadow-xl ${x.type === "success" ? "bg-green-900 border-green-600 text-green-200" : x.type === "error" ? "bg-red-950 border-red-700 text-red-200" : "bg-yellow-900 border-yellow-600 text-yellow-200"}`}>
+{x.type === “success” ? <Check size={14} /> : x.type === “error” ? <X size={14} /> : <AlertTriangle size={14} />}
+<span className="flex-1">{x.msg}</span><button onClick={() => dismiss(x.id)}><X size={11} /></button>
+</div>))}</div>);
+}
+
+function Modal({ open, onClose, children, wide }) {
+if (!open) return null;
+return (<div style={{position:‘fixed’,inset:0,zIndex:1000,display:‘flex’,alignItems:‘center’,justifyContent:‘center’,padding:12}} onClick={onClose}><div style={{position:‘absolute’,inset:0,background:‘rgba(0,0,0,0.8)’,backdropFilter:‘blur(4px)’}} />
+<div className={`relative bg-gray-900 border-2 border-red-700 rounded-3xl shadow-2xl p-4 overflow-y-auto ${wide ? "w-full max-w-3xl" : "w-full max-w-md"}`} style={{maxHeight:‘88vh’}} onClick={e => e.stopPropagation()}>
+<button onClick={onClose} className="absolute top-3 right-3 text-gray-400 hover:text-white" style={{zIndex:10}}><X size={18} /></button>{children}
+</div></div>);
+}
+
+function MetricCard({ icon: I, label, value, accent, onClick }) {
+return (<button onClick={onClick} className={`flex flex-col items-start gap-1 p-3 rounded-2xl border-2 shadow-lg ${accent ? "bg-red-700 border-red-500" : "bg-gray-900 border-gray-700"} text-white`} style={{transition:‘transform 0.1s’}} onPointerDown={e=>e.currentTarget.style.transform=‘scale(0.95)’} onPointerUp={e=>e.currentTarget.style.transform=‘scale(1)’}>
+<I size={16} className={accent ? “text-white” : “text-red-500”} /><span style={{fontSize:8}} className="uppercase tracking-widest font-bold opacity-70">{label}</span>
+<span style={{ fontFamily: “‘Bebas Neue’”, fontSize: 24, lineHeight: 1 }}>{value}</span></button>);
+}
+
+function DocForm({ type, co, setCo, cur, setCur, docDate, setDocDate, cli, setCli, items, setItems, bnk, setBnk, terms, setTerms, authSig, setAuthSig, docPrefix, setDocPrefix, docNum, setDocNum, onSave, onSelectStock }) {
+const sub = items.reduce((s, i) => s + (i.qty || 0) * (i.pr || 0), 0);
+const vat = sub * 0.05;
+const grd = sub + vat;
+const isQ = type === “quotation”;
+const accent = isQ ? “#2563EB” : “#D7261E”;
+
+return (
+<div className="space-y-3">
+<div className="flex flex-wrap gap-1.5">
+<button onClick={onSelectStock} className=“flex items-center gap-1 px-2.5 py-1.5 bg-gray-900 border-2 border-gray-700 hover:border-red-500 rounded-xl text-white” style={{fontSize:9,fontWeight:700,textTransform:‘uppercase’}}><Package size={11} />From Stock</button>
+<button onClick={() => setItems(p => […p, { id: uid(), code: “”, desc: “”, qty: 1, pr: 0 }])} className=“flex items-center gap-1 px-2.5 py-1.5 bg-gray-900 border-2 border-gray-700 hover:border-red-500 rounded-xl text-white” style={{fontSize:9,fontWeight:700,textTransform:‘uppercase’}}><Plus size={11} />Custom</button>
+<div className="flex-1" />
+<button onClick={() => onSave(grd)} className=“flex items-center gap-1 px-3 py-1.5 border-2 rounded-xl text-white” style={{fontSize:9,fontWeight:700,textTransform:‘uppercase’,backgroundColor:accent,borderColor:accent}}>
+<Save size={11} />{isQ ? “Save Quotation” : “Save & Deduct”}
+</button>
+</div>
+<div className=“bg-white text-gray-900 rounded-2xl shadow-2xl overflow-hidden” style={{fontFamily:‘Montserrat’}}>
+<div className="bg-gray-950 text-white p-4">
+<div className="flex flex-col sm:flex-row justify-between gap-3">
+<div className="space-y-1">
+<input className=“bg-transparent font-black uppercase text-lg outline-none border-b border-gray-700 focus:border-red-500 w-full text-white” style={{fontFamily:”‘Bebas Neue’”,fontSize:22}} value={co.name} onChange={e => setCo(p => ({…p, name: e.target.value}))} />
+<div style={{fontSize:10}} className="space-y-0.5 text-gray-400">
+<p className="flex items-center gap-1">TRN: <input className=“bg-transparent border-b border-gray-700 focus:border-red-500 outline-none text-gray-300 w-32” value={co.trn} onChange={e => setCo(p => ({…p, trn: e.target.value}))} /></p>
+<p className="flex items-center gap-1"><Building2 size={10} /><input className=“bg-transparent border-b border-gray-700 focus:border-red-500 outline-none text-gray-300 flex-1” value={co.address} onChange={e => setCo(p => ({…p, address: e.target.value}))} /></p>
+<p className="flex items-center gap-1"><Phone size={10} /><input className=“bg-transparent border-b border-gray-700 focus:border-red-500 outline-none text-gray-300 w-40” value={co.phone} onChange={e => setCo(p => ({…p, phone: e.target.value}))} /></p>
+<p className="flex items-center gap-1"><Mail size={10} /><input className=“bg-transparent border-b border-gray-700 focus:border-red-500 outline-none text-gray-300 w-48” value={co.email} onChange={e => setCo(p => ({…p, email: e.target.value}))} /></p>
+</div>
+</div>
+<div className="text-right space-y-1">
+<p className=“text-xl font-black uppercase” style={{fontFamily:”‘Bebas Neue’”,color:accent}}>{isQ?“QUOTATION”:“INVOICE”}</p>
+<div className="flex items-center justify-end gap-1">
+<input className=“bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white outline-none w-14 text-center font-bold” value={docPrefix} onChange={e => setDocPrefix(e.target.value)} />
+<span className="text-gray-500 text-xs">-</span>
+<input type=“number” className=“bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white outline-none w-20 text-center font-bold” value={docNum} onChange={e => setDocNum(Math.max(1,+e.target.value))} />
+</div>
+<input type=“date” className=“bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white outline-none” value={docDate} onChange={e => setDocDate(e.target.value)} />
+<select className=“block ml-auto bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-xs text-white mt-1” value={cur.c} onChange={e => setCur(CUR.find(c => c.c === e.target.value))}>{CUR.map(c => <option key={c.c} value={c.c}>{c.c} ({c.s})</option>)}</select>
+</div>
+</div>
+</div>
+<div className="px-4 py-3 border-b border-gray-200">
+<p style={{fontSize:8}} className="uppercase tracking-widest font-bold text-gray-500 mb-1">Bill To</p>
+<input className=“w-full text-sm font-bold border-b border-gray-300 focus:border-red-500 outline-none py-0.5 bg-transparent” style={{color:’#111’}} placeholder=“Client Name” value={cli.n} onChange={e => setCli(p => ({…p, n: e.target.value}))} />
+<textarea className=“w-full text-xs text-gray-600 border-b border-gray-200 focus:border-red-500 outline-none py-0.5 bg-transparent resize-none” placeholder=“Address” rows={2} value={cli.a} onChange={e => setCli(p => ({…p, a: e.target.value}))} />
+</div>
+<div className="px-4 py-2">
+<table className="w-full" style={{fontSize:10}}><thead><tr className="border-b-2 border-gray-900">{[“Code”,“Description”,“Q”,“Price”,“Total”,””].map(h=><th key={h} className=“py-1 text-left font-bold text-gray-500” style={{fontSize:8,textTransform:‘uppercase’,letterSpacing:‘0.1em’}}>{h}</th>)}</tr></thead><tbody>
+{items.map(it=>(<tr key={it.id} className="border-b border-gray-200">
+<td className="py-1 pr-1"><input className=“w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-red-500 outline-none text-gray-700” style={{fontFamily:‘monospace’,fontSize:9}} value={it.code} onChange={e=>setItems(p=>p.map(i=>i.id===it.id?{…i,code:e.target.value}:i))}/></td>
+<td className="py-1 pr-1"><input className=“w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-red-500 outline-none text-gray-700” style={{fontSize:10}} value={it.desc} onChange={e=>setItems(p=>p.map(i=>i.id===it.id?{…i,desc:e.target.value}:i))}/></td>
+<td className="py-1 pr-1"><input type=“number” className=“w-8 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-red-500 outline-none text-gray-700 text-center” style={{fontSize:10}} value={it.qty} onChange={e=>setItems(p=>p.map(i=>i.id===it.id?{…i,qty:+e.target.value}:i))}/></td>
+<td className="py-1 pr-1"><input type=“number” className=“w-16 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-red-500 outline-none text-gray-700” style={{fontSize:10}} value={it.pr} onChange={e=>setItems(p=>p.map(i=>i.id===it.id?{…i,pr:+e.target.value}:i))}/></td>
+<td className="py-1 font-bold" style={{fontSize:10}}>{cur.s} {((it.qty||0)*(it.pr||0)).toLocaleString()}</td>
+<td className="py-1"><button onClick={()=>setItems(p=>p.filter(i=>i.id!==it.id))} className=“text-gray-400 hover:text-red-500”><X size={11}/></button></td>
+</tr>))}
+{!items.length&&<tr><td colSpan={6} className="text-center py-6 text-gray-400" style={{fontSize:10}}>Add items from stock or custom</td></tr>}
+</tbody></table>
+</div>
+<div className="px-4 py-2 flex justify-end"><div className="w-44 space-y-1" style={{fontSize:11}}>
+<div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span className="font-bold">{cur.s} {sub.toLocaleString()}</span></div>
+<div className="flex justify-between"><span className="text-gray-500">VAT 5%</span><span className="font-bold">{cur.s} {vat.toLocaleString()}</span></div>
+<div className="flex justify-between border-t-2 border-gray-900 pt-1"><span className="font-black uppercase" style={{fontSize:10}}>Total</span><span className="font-black text-sm" style={{color:accent}}>{cur.s} {grd.toLocaleString()}</span></div>
+</div></div>
+<div className="px-4 py-3 bg-gray-50 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div><p style={{fontSize:8}} className="uppercase tracking-widest font-bold text-gray-500 mb-1">Bank Details</p><div className="space-y-0.5" style={{fontSize:10}}>
+<p>Account: <input className=“bg-transparent border-b border-gray-300 focus:border-red-500 outline-none text-gray-700 ml-1 w-36” value={bnk.a} onChange={e=>setBnk(p=>({…p,a:e.target.value}))}/></p>
+<p>IBAN: <input className=“bg-transparent border-b border-gray-300 focus:border-red-500 outline-none text-gray-700 ml-1 w-48” value={bnk.i} onChange={e=>setBnk(p=>({…p,i:e.target.value}))} placeholder=“AE00 0000 0000 0000”/></p>
+<p>Bank: <input className=“bg-transparent border-b border-gray-300 focus:border-red-500 outline-none text-gray-700 ml-1 w-36” value={bnk.b} onChange={e=>setBnk(p=>({…p,b:e.target.value}))} placeholder=“Emirates NBD”/></p>
+</div></div>
+<div><p style={{fontSize:8}} className="uppercase tracking-widest font-bold text-gray-500 mb-1">Payment Terms</p><textarea className=“w-full bg-transparent border border-gray-300 rounded-lg p-1.5 text-gray-600 outline-none resize-none” style={{fontSize:10}} rows={3} value={terms} onChange={e=>setTerms(e.target.value)}/></div>
+</div>
+<div className="px-4 py-4 grid grid-cols-2 gap-4">
+<div><div className="border-b-2 border-gray-300 h-10"/><p style={{fontSize:8}} className="uppercase tracking-widest font-bold text-gray-500 mt-1">Customer Signature</p></div>
+<div><div className="border-b-2 border-gray-300 h-10"/><input className=“w-full text-gray-600 border-b border-gray-200 focus:border-red-500 outline-none mt-1 bg-transparent” style={{fontSize:9}} placeholder=“Authorized Signatory Name & Title” value={authSig} onChange={e=>setAuthSig(e.target.value)}/></div>
+</div>
+</div>
+</div>
+);
+}
+
+function App() {
+const { items: toasts, toast, dismiss } = useToast();
+const [fb, setFb] = useState(false);
+const [tab, setTab] = useState(“inventory”);
+const [inv, setInv] = useState(SEEDS);
+const [sales, setSales] = useState([]);
+const [quotes, setQuotes] = useState([]);
+const [sups] = useState(SSUP);
+const [scanO, setScanO] = useState(false);
+const [dupO, setDupO] = useState(false);
+const [dupI, setDupI] = useState([]);
+const [pend, setPend] = useState([]);
+const [stkO, setStkO] = useState(false);
+const [stkTarget, setStkTarget] = useState(“invoice”);
+const [salO, setSalO] = useState(false);
+const [qtHisO, setQtHisO] = useState(false);
+const [q, setQ] = useState(””);
+const [shF, setShF] = useState(false);
+const [pf, sPf] = useState(””);
+const [pt, sPt] = useState(””);
+const [co, setCo] = useState({name:“DRIVETRAIN TRADING FZ LLC”,trn:“100XXXXXXXXX”,address:“SHARJAH, UAE - INDUSTRIAL AREA 10”,phone:”+971-XX-XXXXXXX”,email:“info@drivetraintrading.com”});
+const [cur, setCur] = useState(CUR[0]);
+const [iDt, setIDt] = useState(td());
+const [iCli, setICli] = useState({n:””,a:””});
+const [iIt, setIIt] = useState([]);
+const [iBnk, setIBnk] = useState({a:“DRIVETRAIN TRADING FZ LLC”,i:””,b:””});
+const [iTrm, setITrm] = useState(“Goods sold are not returnable or refundable. Payment due within 30 days.”);
+const [iAuth, setIAuth] = useState(””);
+const [iPrefix, setIPrefix] = useState(“DT”);
+const [iNum, setINum] = useState(1);
+const [qDt, setQDt] = useState(td());
+const [qCli, setQCli] = useState({n:””,a:””});
+const [qIt, setQIt] = useState([]);
+const [qBnk, setQBnk] = useState({a:“DRIVETRAIN TRADING FZ LLC”,i:””,b:””});
+const [qTrm, setQTrm] = useState(“Quotation valid for 14 days. Prices subject to change.”);
+const [qAuth, setQAuth] = useState(””);
+const [qPrefix, setQPrefix] = useState(“QT”);
+const [qNum, setQNum] = useState(1);
+const [sQ2, setSQ2] = useState(””);
+const [exS, setExS] = useState(null);
+const [aiMode, setAiMode] = useState(“upload”);
+const [aiBusy, setAiBusy] = useState(false);
+const [aiPaste, setAiPaste] = useState(””);
+const [aiKey, setAiKey] = useState(“AIzaSyDeyyy8qP5MZFBB-qbiStqtNlfKsUPJSeM”);
+const fRef = useRef();
+const cRef = useRef();
+
+useEffect(() => {
+(async () => {
+try {
+const appMod = await import(“https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js”);
+const fsMod = await import(“https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js”);
+const authMod = await import(“https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js”);
+const app = appMod.initializeApp({apiKey:“AIzaSyAKuZ8genzvb4xTZe991ABUlZqSpyxekOk”,authDomain:“drivetrain-5924f.firebaseapp.com”,projectId:“drivetrain-5924f”,storageBucket:“drivetrain-5924f.firebasestorage.app”,messagingSenderId:“179326760527”,appId:“1:179326760527:web:ac75e8800b0ba148119c3a”});
+const db = fsMod.getFirestore(app);
+await authMod.signInAnonymously(authMod.getAuth(app));
+setFb(true); toast(“Cloud connected!”);
+window._db=db; window._fs=fsMod;
+fsMod.onSnapshot(fsMod.collection(db,“inventory”),snap=>{const d=snap.docs.map(x=>({id:x.id,…x.data()}));if(!d.length){SEEDS.forEach(e=>fsMod.setDoc(fsMod.doc(db,“inventory”,e.id),e));SSUP.forEach(s=>fsMod.setDoc(fsMod.doc(db,“suppliers”,s.id),s))}else setInv(d)});
+fsMod.onSnapshot(fsMod.collection(db,“sales”),snap=>{const d=snap.docs.map(x=>({id:x.id,…x.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));setSales(d);if(d.length)setINum(Math.max(…d.map(s=>s.invoiceNumber||0))+1)});
+fsMod.onSnapshot(fsMod.collection(db,“quotes”),snap=>{const d=snap.docs.map(x=>({id:x.id,…x.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));setQuotes(d);if(d.length)setQNum(Math.max(…d.map(s=>s.quoteNumber||0))+1)});
+} catch(e){console.error(e);toast(“Offline mode”,“warning”)}
+})();
+}, []);
+
+const dbS=(c,id,d)=>{if(window._db&&window._fs)try{window._fs.setDoc(window._fs.doc(window._db,c,id),d)}catch{}};
+const dbD=(c,id)=>{if(window._db&&window._fs)try{window._fs.deleteDoc(window._fs.doc(window._db,c,id))}catch{}};
+const tU=inv.length,aU=inv.filter(e=>e.status===“Available”).length;
+const pr=inv.reduce((s,e)=>s+((e.sellingPrice||0)-(e.purchasePrice||0))*(e.qty||1),0);
+const flt=useMemo(()=>inv.filter(e=>{const l=q.toLowerCase();return(!l||[e.brand,e.engineNo,e.supplier].some(f=>f?.toLowerCase().includes(l)))&&(!pf||e.datePurchased>=pf)&&(!pt||e.datePurchased<=pt)}),[inv,q,pf,pt]);
+const uE=(id,f,v)=>setInv(p=>p.map(e=>{if(e.id!==id)return e;const n={…e,[f]:v};dbS(“inventory”,n.id,n);return n}));
+const dE=id=>{setInv(p=>p.filter(e=>e.id!==id));dbD(“inventory”,id);toast(“Deleted”)};
+const aE=()=>{const n={id:uid(),brand:””,engineNo:””,qty:1,status:“Available”,purchasePrice:0,sellingPrice:0,datePurchased:td(),dateSold:””,supplier:””};setInv(p=>[n,…p]);dbS(“inventory”,n.id,n)};
+
+const compImg=file=>new Promise((res,rej)=>{const img=new Image();const r=new FileReader();r.onload=e=>{img.onload=()=>{const c=document.createElement(“canvas”);let w=img.width,h=img.height;if(w>1024||h>1024){if(w>h){h=Math.round(h*1024/w);w=1024}else{w=Math.round(w*1024/h);h=1024}}c.width=w;c.height=h;c.getContext(“2d”).drawImage(img,0,0,w,h);res(c.toDataURL(“image/jpeg”,0.7))};img.onerror=rej;img.src=e.target.result};r.onerror=rej;r.readAsDataURL(file)});
+const runAI=async b64=>{setAiBusy(true);try{if(!aiKey){toast(“Enter Gemini key”,“error”);setAiBusy(false);return}const resp=await fetch(“https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=”+aiKey,{method:“POST”,headers:{“Content-Type”:“application/json”},body:JSON.stringify({contents:[{parts:[{text:‘Extract the engine brand, serial number, and price from this image. Return ONLY a JSON array of objects with fields: brand, engineNo, qty (default 1), purchasePrice (number), sellingPrice (number), supplier (string, “Unknown” if not visible).’},{inlineData:{mimeType:“image/jpeg”,data:b64.split(”,”)[1]}}]}],generationConfig:{responseMimeType:“application/json”}})});const d=await resp.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text||””;const parsed=JSON.parse(txt.replace(/`json\n?/g,"").replace(/`/g,””).trim());if(Array.isArray(parsed)&&parsed.length){doAIResult(parsed);setScanO(false);toast(“Found “+parsed.length+” engine(s)!”)}else toast(“None found”,“error”)}catch(err){toast(“AI error: “+err.message,“error”)}setAiBusy(false)};
+const onAIF=async e=>{const file=e.target.files?.[0];if(file)try{await runAI(await compImg(file))}catch{toast(“Failed”,“error”)}};
+const doAIResult=parsed=>{const has=new Set(inv.map(e=>e.engineNo?.toLowerCase()));const dups=parsed.filter(p=>has.has(p.engineNo?.toLowerCase()));const nw=parsed.filter(p=>!has.has(p.engineNo?.toLowerCase())).map(p=>({id:uid(),brand:p.brand||””,engineNo:p.engineNo||””,qty:p.qty||1,status:“Available”,purchasePrice:p.purchasePrice||0,sellingPrice:p.sellingPrice||0,datePurchased:td(),dateSold:””,supplier:p.supplier||“Unknown”}));nw.forEach(e=>dbS(“inventory”,e.id,e));if(nw.length)setInv(p=>[…nw,…p]);if(dups.length){setDupI(dups);setPend(dups);setDupO(true)}};
+const forceAdd=()=>{const f=pend.map(p=>({id:uid(),brand:p.brand||””,engineNo:p.engineNo||””,qty:1,status:“Available”,purchasePrice:p.purchasePrice||0,sellingPrice:p.sellingPrice||0,datePurchased:td(),dateSold:””,supplier:p.supplier||“Unknown”}));f.forEach(e=>dbS(“inventory”,e.id,e));setInv(p=>[…f,…p]);setDupO(false);setPend([]);toast(“Force-added”,“warning”)};
+
+const saveInvoice=(total)=>{if(!iIt.length){toast(“Add items”,“error”);return}const iv={id:uid(),invoicePrefix:iPrefix,invoiceNumber:iNum,date:iDt,clientInfo:{name:iCli.n,address:iCli.a},items:iIt,totalAmount:total,createdAt:Date.now()};setSales(p=>[iv,…p]);dbS(“sales”,iv.id,iv);iIt.filter(i=>i.eid).forEach(i=>{uE(i.eid,“status”,“Sold”);uE(i.eid,“dateSold”,iDt)});toast(“Invoice saved & stock updated!”);setIIt([]);setICli({n:””,a:””});setINum(iNum+1)};
+const saveQuote=(total)=>{if(!qIt.length){toast(“Add items”,“error”);return}const qt={id:uid(),quotePrefix:qPrefix,quoteNumber:qNum,date:qDt,clientInfo:{name:qCli.n,address:qCli.a},items:qIt,totalAmount:total,createdAt:Date.now()};setQuotes(p=>[qt,…p]);dbS(“quotes”,qt.id,qt);toast(“Quotation saved!”);setQIt([]);setQCli({n:””,a:””});setQNum(qNum+1)};
+const addStockItem=e=>{const item={id:uid(),code:e.engineNo,desc:e.brand+” Engine - “+e.engineNo,qty:e.qty||1,pr:e.sellingPrice||0,eid:e.id};if(stkTarget===“invoice”)setIIt(p=>[…p,item]);else setQIt(p=>[…p,{…item,eid:undefined}]);toast(“Added”);setStkO(false)};
+const xcsv=(fn,h,rows)=>{const c=[h.join(”,”),…rows.map(r=>r.map(c=>’”’+String(c??””).replace(/”/g,’””’)+’”’).join(”,”))].join(”\n”);const b=new Blob([c],{type:“text/csv”});const u=URL.createObjectURL(b);const a=document.createElement(“a”);a.href=u;a.download=fn;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);toast(fn+” exported”)};
+const agS=useMemo(()=>{const m={};inv.forEach(e=>{const k=(e.supplier||”?”).trim().toLowerCase();if(!m[k])m[k]={name:e.supplier||”?”,eng:[],ph:””,em:””};m[k].eng.push(e)});sups.forEach(s=>{const k=s.name.trim().toLowerCase();if(!m[k])m[k]={name:s.name,eng:[],ph:s.phone,em:s.email};else{m[k].ph=m[k].ph||s.phone;m[k].em=m[k].em||s.email}});return Object.values(m).filter(s=>!sQ2||s.name.toLowerCase().includes(sQ2.toLowerCase()))},[inv,sups,sQ2]);
+
+return (
+<div className=“min-h-screen bg-gray-950 text-white” style={{fontFamily:“Montserrat,sans-serif”}}>
+<Toasts items={toasts} dismiss={dismiss} />
+<header className=“sticky top-0 bg-gray-950 border-b-2 border-red-700” style={{zIndex:50,backdropFilter:‘blur(8px)’,background:‘rgba(3,7,18,0.95)’}}>
+<div className="max-w-6xl mx-auto px-2 py-2 flex items-center justify-between">
+<div className="flex items-center gap-2"><div className="w-8 h-8 bg-red-700 rounded-xl flex items-center justify-center"><Zap size={15}/></div><div><h1 className=“font-black uppercase” style={{fontFamily:”‘Bebas Neue’”,fontSize:17}}>DRIVETRAIN</h1><div className="flex items-center gap-1"><span style={{fontSize:7}} className="text-gray-500 uppercase tracking-widest font-bold">Suite</span><span style={{width:6,height:6,borderRadius:‘50%’}} className={fb?“bg-green-500”:“bg-yellow-500 animate-pulse”}/></div></div></div>
+<nav className="flex gap-0.5 overflow-x-auto">{[[“inventory”,Package,“Stock”],[“invoicing”,FileText,“Invoice”],[“quotation”,ClipboardList,“Quote”],[“suppliers”,Truck,“Supply”]].map(([k,I,l])=>(<button key={k} onClick={()=>setTab(k)} className={`flex items-center gap-1 px-2 py-1.5 rounded-lg font-bold uppercase whitespace-nowrap ${tab===k?"bg-red-700 text-white":"text-gray-400"}`} style={{fontSize:8}}><I size={11}/>{l}</button>))}</nav>
+<div className="flex gap-0.5"><button onClick={()=>setSalO(true)} className=“p-1.5 text-gray-400 hover:text-white”><History size={14}/></button><button onClick={()=>xcsv(“inventory.csv”,[“Brand”,“EngineNo”,“QTY”,“Status”,“Buy”,“Sell”,“Supplier”],inv.map(e=>[e.brand,e.engineNo,e.qty,e.status,e.purchasePrice,e.sellingPrice,e.supplier]))} className=“p-1.5 text-gray-400 hover:text-white”><Download size={14}/></button></div>
+</div>
+</header>
+
+```
+  {salO&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:900}} onClick={()=>setSalO(false)}/>}
+  <div style={{position:'fixed',top:0,right:0,height:'100%',width:'100%',maxWidth:320,zIndex:950,transition:'transform 0.3s',transform:salO?'translateX(0)':'translateX(100%)'}} className="bg-gray-900 border-l-2 border-red-700">
+    <div className="p-4 h-full overflow-y-auto"><div className="flex items-center justify-between mb-4"><h2 className="text-lg font-black uppercase" style={{fontFamily:"'Bebas Neue'"}}>Invoices</h2><button onClick={()=>setSalO(false)}><X size={18} className="text-gray-400"/></button></div>
+    <button onClick={()=>xcsv("invoices.csv",["Ref","Date","Client","Total"],sales.map(s=>[s.invoicePrefix+"-"+String(s.invoiceNumber).padStart(6,"0"),s.date,s.clientInfo?.name,s.totalAmount]))} className="w-full mb-3 flex items-center justify-center gap-1 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-300" style={{fontSize:9,fontWeight:700,textTransform:'uppercase'}}><Download size={11}/>Export</button>
+    {!sales.length&&<p className="text-gray-500 text-xs text-center py-8">None yet</p>}
+    {sales.map((s,i)=>(<div key={s.id||i} className="mb-2 p-3 bg-gray-800 border border-gray-700 rounded-xl"><div className="flex justify-between mb-0.5"><span className="font-bold text-white text-xs">{s.invoicePrefix}-{String(s.invoiceNumber).padStart(6,"0")}</span><span style={{fontSize:10}} className="text-gray-500">{s.date}</span></div><p style={{fontSize:10}} className="text-gray-400">{s.clientInfo?.name||"—"}</p><p className="text-red-400 font-bold text-xs">{cur.s} {s.totalAmount?.toLocaleString()}</p></div>))}</div>
+  </div>
+
+  {qtHisO&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:900}} onClick={()=>setQtHisO(false)}/>}
+  <div style={{position:'fixed',top:0,right:0,height:'100%',width:'100%',maxWidth:320,zIndex:950,transition:'transform 0.3s',transform:qtHisO?'translateX(0)':'translateX(100%)'}} className="bg-gray-900 border-l-2 border-blue-700">
+    <div className="p-4 h-full overflow-y-auto"><div className="flex items-center justify-between mb-4"><h2 className="text-lg font-black uppercase" style={{fontFamily:"'Bebas Neue'"}}>Quotes</h2><button onClick={()=>setQtHisO(false)}><X size={18} className="text-gray-400"/></button></div>
+    <button onClick={()=>xcsv("quotations.csv",["Ref","Date","Client","Total"],quotes.map(q=>[q.quotePrefix+"-"+String(q.quoteNumber).padStart(6,"0"),q.date,q.clientInfo?.name,q.totalAmount]))} className="w-full mb-3 flex items-center justify-center gap-1 px-2 py-1.5 bg-gray-800 border border-gray-700 rounded-xl text-gray-300" style={{fontSize:9,fontWeight:700,textTransform:'uppercase'}}><Download size={11}/>Export</button>
+    {!quotes.length&&<p className="text-gray-500 text-xs text-center py-8">None yet</p>}
+    {quotes.map((s,i)=>(<div key={s.id||i} className="mb-2 p-3 bg-gray-800 border border-gray-700 rounded-xl"><div className="flex justify-between mb-0.5"><span className="font-bold text-white text-xs">{s.quotePrefix}-{String(s.quoteNumber).padStart(6,"0")}</span><span style={{fontSize:10}} className="text-gray-500">{s.date}</span></div><p style={{fontSize:10}} className="text-gray-400">{s.clientInfo?.name||"—"}</p><p className="text-blue-400 font-bold text-xs">{cur.s} {s.totalAmount?.toLocaleString()}</p></div>))}</div>
+  </div>
+
+  <main className="max-w-6xl mx-auto px-2 py-3">
+    {tab==="inventory"&&(<div className="space-y-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2"><MetricCard icon={ScanLine} label="AI Scan" value="SCAN" accent onClick={()=>setScanO(true)}/><MetricCard icon={Box} label="Total" value={tU}/><MetricCard icon={Package} label="Avail" value={aU}/><MetricCard icon={TrendingUp} label="Profit" value={cur.s+pr.toLocaleString()}/></div>
+      <div className="flex gap-1.5"><div className="relative flex-1"><Search size={13} style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)'}} className="text-gray-500"/><input className="w-full bg-gray-900 border-2 border-gray-700 rounded-xl pl-8 pr-2 py-2 text-xs text-white outline-none focus:border-red-500" placeholder="Search..." value={q} onChange={e=>setQ(e.target.value)}/></div>
+      <button onClick={()=>setShF(!shF)} className={`px-2 rounded-xl border-2 ${shF?"bg-red-700 border-red-500":"bg-gray-900 border-gray-700"}`}><Filter size={13}/></button><button onClick={aE} className="px-2 rounded-xl bg-red-700 border-2 border-red-500"><Plus size={13}/></button></div>
+      {shF&&(<div className="grid grid-cols-2 gap-2 p-2 bg-gray-900 border-2 border-gray-700 rounded-xl"><div><label style={{fontSize:7}} className="uppercase tracking-widest text-gray-500 font-bold">From</label><input type="date" className="w-full mt-0.5 bg-gray-800 border border-gray-700 rounded-lg px-1.5 py-1 text-white outline-none" style={{fontSize:10}} value={pf} onChange={e=>sPf(e.target.value)}/></div><div><label style={{fontSize:7}} className="uppercase tracking-widest text-gray-500 font-bold">To</label><input type="date" className="w-full mt-0.5 bg-gray-800 border border-gray-700 rounded-lg px-1.5 py-1 text-white outline-none" style={{fontSize:10}} value={pt} onChange={e=>sPt(e.target.value)}/></div></div>)}
+      <div className="overflow-x-auto rounded-xl border-2 border-gray-700"><table className="w-full" style={{fontSize:10}}><thead><tr className="bg-gray-900 border-b-2 border-gray-700">{["Brand","Engine No","Q","Status","Buy","Sell","Date","Supplier",""].map(h=><th key={h} className="px-1.5 py-2 text-left text-gray-500 font-bold whitespace-nowrap" style={{fontSize:8,textTransform:'uppercase',letterSpacing:'0.1em'}}>{h}</th>)}</tr></thead><tbody>
+        {flt.map(e=>(<tr key={e.id} className="border-b border-gray-800 hover:bg-gray-900">
+          <td className="px-1.5 py-1"><input className="w-full bg-transparent border-b border-transparent hover:border-gray-600 focus:border-red-500 outline-none text-white" style={{fontSize:10}} value={e.brand} onChange={v=>uE(e.id,"brand",v.target.value)}/></td>
+          <td className="px-1.5 py-1"><input className="w-full bg-transparent border-b border-transparent hover:border-gray-600 focus:border-red-500 outline-none text-white" style={{fontFamily:'monospace',fontSize:9}} value={e.engineNo} onChange={v=>uE(e.id,"engineNo",v.target.value)}/></td>
+          <td className="px-1.5 py-1"><input type="number" className="w-7 bg-transparent border-b border-transparent hover:border-gray-600 focus:border-red-500 outline-none text-white text-center" style={{fontSize:10}} value={e.qty} onChange={v=>uE(e.id,"qty",+v.target.value)}/></td>
+          <td className="px-1.5 py-1"><button onClick={()=>uE(e.id,"status",e.status==="Available"?"Sold":"Available")} className={`px-1.5 py-0.5 rounded-full font-bold uppercase ${e.status==="Available"?"bg-green-900 text-green-300 border border-green-700":"bg-red-950 text-red-400 border border-red-800"}`} style={{fontSize:8}}>{e.status}</button></td>
+          <td className="px-1.5 py-1"><input type="number" className="w-14 bg-transparent border-b border-transparent hover:border-gray-600 focus:border-red-500 outline-none text-white" style={{fontSize:10}} value={e.purchasePrice} onChange={v=>uE(e.id,"purchasePrice",+v.target.value)}/></td>
+          <td className="px-1.5 py-1"><input type="number" className="w-14 bg-transparent border-b border-transparent hover:border-gray-600 focus:border-red-500 outline-none text-white" style={{fontSize:10}} value={e.sellingPrice} onChange={v=>uE(e.id,"sellingPrice",+v.target.value)}/></td>
+          <td className="px-1.5 py-1"><input type="date" className="bg-transparent border-b border-transparent hover:border-gray-600 focus:border-red-500 outline-none text-gray-400" style={{fontSize:9}} value={e.datePurchased} onChange={v=>uE(e.id,"datePurchased",v.target.value)}/></td>
+          <td className="px-1.5 py-1"><input className="w-full bg-transparent border-b border-transparent hover:border-gray-600 focus:border-red-500 outline-none text-gray-400" style={{fontSize:10}} value={e.supplier} onChange={v=>uE(e.id,"supplier",v.target.value)}/></td>
+          <td className="px-1.5 py-1"><button onClick={()=>dE(e.id)} className="p-0.5 text-gray-600 hover:text-red-500"><Trash2 size={11}/></button></td>
+        </tr>))}{!flt.length&&<tr><td colSpan={9} className="text-center py-8 text-gray-600">No engines</td></tr>}
+      </tbody></table></div>
+    </div>)}
+
+    {tab==="invoicing"&&<DocForm type="invoice" co={co} setCo={setCo} cur={cur} setCur={setCur} docDate={iDt} setDocDate={setIDt} cli={iCli} setCli={setICli} items={iIt} setItems={setIIt} bnk={iBnk} setBnk={setIBnk} terms={iTrm} setTerms={setITrm} authSig={iAuth} setAuthSig={setIAuth} docPrefix={iPrefix} setDocPrefix={setIPrefix} docNum={iNum} setDocNum={setINum} onSave={saveInvoice} onSelectStock={()=>{setStkTarget("invoice");setStkO(true)}} toast={toast}/>}
+
+    {tab==="quotation"&&(<div><div className="flex justify-end mb-2"><button onClick={()=>setQtHisO(true)} className="flex items-center gap-1 px-2.5 py-1.5 bg-gray-900 border-2 border-gray-700 hover:border-blue-500 rounded-xl text-gray-300" style={{fontSize:9,fontWeight:700,textTransform:'uppercase'}}><History size={11}/>Quote History</button></div>
+      <DocForm type="quotation" co={co} setCo={setCo} cur={cur} setCur={setCur} docDate={qDt} setDocDate={setQDt} cli={qCli} setCli={setQCli} items={qIt} setItems={setQIt} bnk={qBnk} setBnk={setQBnk} terms={qTrm} setTerms={setQTrm} authSig={qAuth} setAuthSig={setQAuth} docPrefix={qPrefix} setDocPrefix={setQPrefix} docNum={qNum} setDocNum={setQNum} onSave={saveQuote} onSelectStock={()=>{setStkTarget("quotation");setStkO(true)}} toast={toast}/></div>)}
+
+    {tab==="suppliers"&&(<div className="space-y-3">
+      <div className="flex gap-1.5"><div className="relative flex-1"><Search size={13} style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)'}} className="text-gray-500"/><input className="w-full bg-gray-900 border-2 border-gray-700 rounded-xl pl-8 pr-2 py-2 text-xs text-white outline-none focus:border-red-500" placeholder="Search suppliers..." value={sQ2} onChange={e=>setSQ2(e.target.value)}/></div></div>
+      <div className="space-y-2">{agS.map(s=>(<div key={s.name} className="bg-gray-900 border-2 border-gray-700 rounded-2xl overflow-hidden">
+        <button onClick={()=>setExS(exS===s.name?null:s.name)} className="w-full flex items-center justify-between p-3 text-left hover:bg-gray-800">
+          <div className="flex items-center gap-2"><div className="w-8 h-8 bg-red-700 rounded-xl flex items-center justify-center"><Building2 size={14}/></div><div><h3 className="font-bold text-white uppercase text-xs">{s.name}</h3><div className="flex gap-2 mt-0.5 text-gray-500" style={{fontSize:9}}>{s.ph&&<span><Phone size={8} className="inline mr-0.5"/>{s.ph}</span>}{s.em&&<span><Mail size={8} className="inline mr-0.5"/>{s.em}</span>}</div></div></div>
+          <div className="flex items-center gap-1.5"><span className="text-lg font-black" style={{fontFamily:"'Bebas Neue'"}}>{s.eng.length}</span>{exS===s.name?<ChevronUp size={13} className="text-gray-500"/>:<ChevronDown size={13} className="text-gray-500"/>}</div>
+        </button>
+        {exS===s.name&&s.eng.length>0&&(<div className="border-t border-gray-800 px-3 pb-2"><table className="w-full mt-1" style={{fontSize:9}}><thead><tr className="border-b border-gray-800">{["Model","Serial","Price","Status"].map(h=><th key={h} className="py-1 text-left text-gray-600 font-bold" style={{fontSize:8,textTransform:'uppercase'}}>{h}</th>)}</tr></thead><tbody>{s.eng.map(e=>(<tr key={e.id} className="border-b border-gray-800"><td className="py-1 text-white font-bold">{e.brand}</td><td className="py-1 text-gray-400" style={{fontFamily:'monospace'}}>{e.engineNo}</td><td className="py-1 text-gray-400">{cur.s} {e.purchasePrice?.toLocaleString()}</td><td className="py-1"><span className={`px-1 py-0.5 rounded-full font-bold uppercase ${e.status==="Available"?"bg-green-900 text-green-300":"bg-red-950 text-red-400"}`} style={{fontSize:8}}>{e.status}</span></td></tr>))}</tbody></table></div>)}
+      </div>))}{!agS.length&&<p className="text-center py-10 text-gray-600 text-xs">No suppliers</p>}</div>
+    </div>)}
+  </main>
+
+  <Modal open={scanO} onClose={()=>setScanO(false)}>
+    <h2 className="text-lg font-black uppercase mb-3 flex items-center gap-2" style={{fontFamily:"'Bebas Neue'"}}><ScanLine className="text-red-500" size={18}/>AI Scanner</h2>
+    <div className="flex gap-1 mb-3">{[["upload",Upload,"Upload"],["camera",Camera,"Camera"],["paste",Type,"Paste"]].map(([m,I,l])=>(<button key={m} onClick={()=>setAiMode(m)} className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border-2 font-bold uppercase ${aiMode===m?"bg-red-700 border-red-500 text-white":"bg-gray-800 border-gray-600 text-gray-300"}`} style={{fontSize:9}}><I size={12}/>{l}</button>))}</div>
+    {aiBusy?<div className="flex flex-col items-center py-8"><div style={{width:32,height:32,border:'4px solid #D7261E',borderTopColor:'transparent',borderRadius:'50%',animation:'spin 1s linear infinite'}}/><span style={{fontSize:10}} className="text-gray-400 mt-2 uppercase font-bold">AI reading...</span><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style></div>
+    :aiMode==="upload"?<div><input ref={fRef} type="file" accept="image/*" style={{display:'none'}} onChange={onAIF}/><button onClick={()=>fRef.current?.click()} className="w-full py-10 border-2 border-dashed border-gray-600 rounded-2xl text-gray-400 hover:border-red-500 flex flex-col items-center gap-1"><Upload size={24}/><span style={{fontSize:10}} className="font-bold uppercase">Upload Photo</span></button></div>
+    :aiMode==="camera"?<div><input ref={cRef} type="file" accept="image/*" capture="environment" style={{display:'none'}} onChange={onAIF}/><button onClick={()=>cRef.current?.click()} className="w-full py-10 border-2 border-dashed border-gray-600 rounded-2xl text-gray-400 hover:border-red-500 flex flex-col items-center gap-1"><Camera size={24}/><span style={{fontSize:10}} className="font-bold uppercase">Camera</span></button></div>
+    :<div className="space-y-2"><textarea className="w-full h-24 bg-gray-800 border-2 border-gray-600 rounded-xl p-2 text-xs text-white outline-none resize-none" style={{fontFamily:'monospace'}} placeholder='[{"brand":"Toyota",...}]' value={aiPaste} onChange={e=>setAiPaste(e.target.value)}/><button onClick={()=>{try{const p=JSON.parse(aiPaste);if(Array.isArray(p)){doAIResult(p);setScanO(false);toast("Imported "+p.length)}}catch{toast("Bad JSON","error")}}} className="w-full py-2 bg-red-700 text-white font-bold uppercase text-xs rounded-xl">Import</button></div>}
+    <div className="mt-3 p-2 bg-gray-800 rounded-xl"><label style={{fontSize:8}} className="uppercase tracking-widest text-gray-500 font-bold">Gemini API Key (gemini-1.5-flash)</label><input type="password" className="w-full mt-1 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-red-500" value={aiKey} onChange={e=>setAiKey(e.target.value)}/></div>
+  </Modal>
+
+  <Modal open={dupO} onClose={()=>setDupO(false)}>
+    <div className="flex items-center gap-2 mb-3 text-red-400"><ShieldAlert size={20}/><h2 className="text-lg font-black uppercase" style={{fontFamily:"'Bebas Neue'"}}>Duplicate Alert</h2></div>
+    <div className="space-y-1 mb-3 max-h-28 overflow-y-auto">{(dupI||[]).map((d,i)=><div key={i} className="flex items-center gap-2 bg-red-950 border border-red-800 rounded-lg px-3 py-1.5 text-xs text-red-300 font-bold"><AlertTriangle size={11}/>{d.engineNo}</div>)}</div>
+    <div className="flex gap-2"><button onClick={()=>{setDupO(false);setPend([])}} className="flex-1 py-2 bg-gray-700 rounded-xl font-bold uppercase text-xs text-white">Discard</button><button onClick={forceAdd} className="flex-1 py-2 bg-red-700 rounded-xl font-bold uppercase text-xs text-white">Force Add</button></div>
+  </Modal>
+
+  <Modal open={stkO} onClose={()=>setStkO(false)} wide>
+    <h2 className="text-lg font-black uppercase mb-3" style={{fontFamily:"'Bebas Neue'"}}>Add to {stkTarget==="invoice"?"Invoice":"Quotation"}</h2>
+    <div className="space-y-1.5 overflow-y-auto" style={{maxHeight:'50vh'}}>
+      {inv.filter(e=>e.status==="Available").map(e=>(<button key={e.id} onClick={()=>addStockItem(e)} className="w-full flex items-center justify-between p-3 bg-gray-800 border border-gray-700 hover:border-red-600 rounded-xl text-left">
+        <div><span className="font-bold text-white text-xs">{e.brand}</span><span className="text-gray-400 ml-1.5" style={{fontSize:10}}>{e.engineNo}</span></div>
+        <span className="text-red-400 font-bold text-xs">{cur.s} {e.sellingPrice?.toLocaleString()}</span>
+      </button>))}
+      {!inv.filter(e=>e.status==="Available").length&&<p className="text-gray-500 text-xs text-center py-6">No stock</p>}
+    </div>
+  </Modal>
+</div>
+```
+
+);
+}
+
+ReactDOM.createRoot(document.getElementById(“root”)).render(<App />);
+</script>
+
+</body>
+</html>
