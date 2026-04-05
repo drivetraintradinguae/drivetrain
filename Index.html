@@ -7,347 +7,183 @@
 <title>Drivetrain Trading Suite</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <style>
-*{box-sizing:border-box}body{margin:0;background:#030712;font-family:'Montserrat',sans-serif;color:#fff}
-.bb{font-family:'Bebas Neue',sans-serif}.tr{transition:all 0.2s}
-.pill-g{background:#14532d;color:#86efac;border:1px solid #15803d;border-radius:9999px;padding:2px 6px;font-size:8px;font-weight:700;text-transform:uppercase}
-.pill-r{background:rgba(127,29,29,0.8);color:#fca5a5;border:1px solid #991b1b;border-radius:9999px;padding:2px 6px;font-size:8px;font-weight:700;text-transform:uppercase}
-.inp{background:transparent;border:none;border-bottom:1px solid transparent;outline:none;color:#fff;font-size:10px;padding:2px 2px;width:100%}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#030712;font-family:'Montserrat',sans-serif;color:#fff}
+.bb{font-family:'Bebas Neue',sans-serif}
+.inp{background:transparent;border:none;border-bottom:1px solid transparent;outline:none;color:#fff;font-size:10px;padding:2px;width:100%}
 .inp:hover{border-bottom-color:#4b5563}.inp:focus{border-bottom-color:#ef4444}
-.inp-w{background:transparent;border:none;border-bottom:1px solid transparent;outline:none;color:#374151;font-size:10px;padding:2px;width:100%}
-.inp-w:hover{border-bottom-color:#d1d5db}.inp-w:focus{border-bottom-color:#ef4444}
-.btn{border:2px solid #374151;background:#111827;color:#fff;padding:6px 10px;border-radius:12px;font-size:9px;font-weight:700;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;gap:4px}
-.btn:hover{border-color:#ef4444}.btn-r{border-color:#ef4444;background:#b91c1c}.btn-b{border-color:#3b82f6;background:#1d4ed8}
-.card{background:#111827;border:2px solid #374151;border-radius:16px;padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;cursor:pointer;color:#fff}
-.card-a{background:#b91c1c;border-color:#ef4444}
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:12px}
-.modal-box{position:relative;background:#111827;border:2px solid #b91c1c;border-radius:24px;padding:16px;max-height:88vh;overflow-y:auto;width:100%;max-width:480px}
-.modal-box.wide{max-width:768px}
-.toast-c{position:fixed;top:56px;right:8px;z-index:9999;display:flex;flex-direction:column;gap:8px}
-.toast{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase;min-width:200px;border:1px solid}
-.toast-s{background:#14532d;border-color:#16a34a;color:#bbf7d0}.toast-e{background:rgba(69,10,10,0.9);border-color:#b91c1c;color:#fecaca}.toast-w{background:rgba(113,63,18,0.9);border-color:#ca8a04;color:#fef08a}
-.sidebar{position:fixed;top:0;right:0;height:100%;width:100%;max-width:320px;z-index:950;transition:transform 0.3s;background:#111827}
-table{border-collapse:collapse;width:100%}th{text-align:left;font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:#6b7280;font-weight:700;padding:8px 6px}
+.inpw{background:transparent;border:none;border-bottom:1px solid transparent;outline:none;color:#374151;font-size:10px;padding:2px;width:100%}
+.inpw:hover{border-bottom-color:#d1d5db}.inpw:focus{border-bottom-color:#ef4444}
+.btn{border:2px solid #374151;background:#111827;color:#fff;padding:6px 10px;border-radius:12px;font-size:9px;font-weight:700;text-transform:uppercase;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{border-color:#ef4444}.btnR{border-color:#ef4444;background:#b91c1c}.btnB{border-color:#3b82f6;background:#1d4ed8}
+.pillG{background:#14532d;color:#86efac;border:1px solid #15803d;border-radius:9999px;padding:2px 6px;font-size:8px;font-weight:700;text-transform:uppercase;cursor:pointer}
+.pillR{background:rgba(127,29,29,0.8);color:#fca5a5;border:1px solid #991b1b;border-radius:9999px;padding:2px 6px;font-size:8px;font-weight:700;text-transform:uppercase;cursor:pointer}
+.card{background:#111827;border:2px solid #374151;border-radius:16px;padding:12px;cursor:pointer;color:#fff}
+.cardA{background:#b91c1c;border-color:#ef4444}
+table{border-collapse:collapse;width:100%}
+th{text-align:left;font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:#6b7280;font-weight:700;padding:8px 6px}
 td{padding:4px 6px}
 input[type=date]{color-scheme:dark}
-.spin{animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.modalBg{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:1000;display:flex;align-items:center;justify-content:center;padding:12px}
+.modalBox{background:#111827;border:2px solid #b91c1c;border-radius:24px;padding:16px;max-height:88vh;overflow-y:auto;width:100%;max-width:480px;position:relative}
+.modalBox.wide{max-width:768px}
+#toasts{position:fixed;top:56px;right:8px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase;min-width:200px;border:1px solid}
+.tS{background:#14532d;border-color:#16a34a;color:#bbf7d0}
+.tE{background:rgba(69,10,10,0.9);border-color:#b91c1c;color:#fecaca}
+.tW{background:rgba(113,63,18,0.9);border-color:#ca8a04;color:#fef08a}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-import{getFirestore,collection,doc,setDoc,deleteDoc,onSnapshot}from"https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
-import{getAuth,signInAnonymously}from"https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-
-const app=initializeApp({apiKey:“AIzaSyAKuZ8genzvb4xTZe991ABUlZqSpyxekOk”,authDomain:“drivetrain-5924f.firebaseapp.com”,projectId:“drivetrain-5924f”,storageBucket:“drivetrain-5924f.firebasestorage.app”,messagingSenderId:“179326760527”,appId:“1:179326760527:web:ac75e8800b0ba148119c3a”});
-const db=getFirestore(app);
-const GEMINI_KEY=“AIzaSyDeyyy8qP5MZFBB-qbiStqtNlfKsUPJSeM”;
-
-const SEEDS=[
-{id:“s1”,brand:“Toyota”,engineNo:“2GR-FE-78441”,qty:1,status:“Available”,purchasePrice:4500,sellingPrice:7200,datePurchased:“2025-11-15”,dateSold:””,supplier:“Al Futtaim Motors”},
-{id:“s2”,brand:“Nissan”,engineNo:“VQ35DE-91022”,qty:1,status:“Available”,purchasePrice:3800,sellingPrice:6100,datePurchased:“2025-12-01”,dateSold:””,supplier:“Gulf Engines Co”},
-{id:“s3”,brand:“BMW”,engineNo:“N55B30-44891”,qty:1,status:“Sold”,purchasePrice:6200,sellingPrice:9800,datePurchased:“2025-10-20”,dateSold:“2026-01-10”,supplier:“Euro Parts DMCC”},
-{id:“s4”,brand:“Mercedes”,engineNo:“M276-DE35-55120”,qty:1,status:“Available”,purchasePrice:7100,sellingPrice:11500,datePurchased:“2026-01-05”,dateSold:””,supplier:“Al Futtaim Motors”}
-];
-const SUPS=[
-{id:“sp1”,name:“Al Futtaim Motors”,phone:”+971-50-1234567”,email:“sales@alfuttaim.ae”},
-{id:“sp2”,name:“Gulf Engines Co”,phone:”+971-55-9876543”,email:“info@gulfengines.com”},
-{id:“sp3”,name:“Euro Parts DMCC”,phone:”+971-52-4561230”,email:“orders@europarts.ae”}
-];
-
-const CUR=[{c:“AED”,s:“د.إ”},{c:“USD”,s:”$”},{c:“EUR”,s:“€”},{c:“GBP”,s:“£”},{c:“SAR”,s:“﷼”}];
-const uid=()=>Math.random().toString(36).substr(2,9)+Date.now().toString(36);
-const td=()=>new Date().toISOString().split(“T”)[0];
-const $=s=>document.querySelector(s);
-const $$=s=>document.querySelectorAll(s);
-
-let state={
-fb:false,tab:“inventory”,inv:[…SEEDS],sales:[],quotes:[],sups:[…SUPS],
-co:{name:“DRIVETRAIN TRADING FZ LLC”,trn:“100XXXXXXXXX”,address:“SHARJAH, UAE - INDUSTRIAL AREA 10”,phone:”+971-XX-XXXXXXX”,email:“info@drivetraintrading.com”},
-cur:CUR[0],q:””,
-iDt:td(),iCli:{n:””,a:””},iIt:[],iPrefix:“DT”,iNum:1,iBnk:{a:“DRIVETRAIN TRADING FZ LLC”,i:””,b:””},iTrm:“Goods sold are not returnable. Payment due 30 days.”,iAuth:””,
-qDt:td(),qCli:{n:””,a:””},qIt:[],qPrefix:“QT”,qNum:1,qBnk:{a:“DRIVETRAIN TRADING FZ LLC”,i:””,b:””},qTrm:“Quotation valid 14 days. Prices subject to change.”,qAuth:””,
-toasts:[],exS:null
-};
-
-function toast(msg,type=“s”){const id=uid();state.toasts.push({id,msg,type});renderToasts();setTimeout(()=>{state.toasts=state.toasts.filter(t=>t.id!==id);renderToasts()},3000)}
-function renderToasts(){const c=$(”.toast-c”);if(!c)return;c.innerHTML=state.toasts.map(t=>`<div class="toast toast-${t.type}">${t.msg}<span style="cursor:pointer;margin-left:auto" onclick="this.parentElement.remove()">✕</span></div>`).join(””)}
-
-const dbS=async(c2,id,d)=>{try{await setDoc(doc(db,c2,id),d)}catch(e){console.error(e)}};
-const dbD=async(c2,id)=>{try{await deleteDoc(doc(db,c2,id))}catch(e){console.error(e)}};
-const xcsv=(fn,h,rows)=>{const c=[h.join(”,”),…rows.map(r=>r.map(c2=>`"${String(c2??"").replace(/"/g,'""')}"`).join(”,”))].join(”\n”);const b=new Blob([c],{type:“text/csv”});const u=URL.createObjectURL(b);const a=document.createElement(“a”);a.href=u;a.download=fn;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);toast(fn+” exported”)};
-
+<div id="toasts"></div>
+<div id="app"></div>
+<div id="modal"></div>
+<script>
 // Firebase init
-(async()=>{
-try{
-await signInAnonymously(getAuth(app));
-state.fb=true;toast(“Cloud connected!”);
-onSnapshot(collection(db,“inventory”),snap=>{const d=snap.docs.map(x=>({id:x.id,…x.data()}));if(!d.length){SEEDS.forEach(e=>setDoc(doc(db,“inventory”,e.id),e));SUPS.forEach(s=>setDoc(doc(db,“suppliers”,s.id),s))}else{state.inv=d;render()}});
-onSnapshot(collection(db,“sales”),snap=>{state.sales=snap.docs.map(x=>({id:x.id,…x.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));if(state.sales.length)state.iNum=Math.max(…state.sales.map(s=>s.invoiceNumber||0))+1;render()});
-onSnapshot(collection(db,“quotes”),snap=>{state.quotes=snap.docs.map(x=>({id:x.id,…x.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));if(state.quotes.length)state.qNum=Math.max(…state.quotes.map(s=>s.quoteNumber||0))+1;render()});
+firebase.initializeApp({apiKey:"AIzaSyAKuZ8genzvb4xTZe991ABUlZqSpyxekOk",authDomain:"drivetrain-5924f.firebaseapp.com",projectId:"drivetrain-5924f",storageBucket:"drivetrain-5924f.firebasestorage.app",messagingSenderId:"179326760527",appId:"1:179326760527:web:ac75e8800b0ba148119c3a"});
+var db=firebase.firestore();
+var GKEY="AIzaSyDeyyy8qP5MZFBB-qbiStqtNlfKsUPJSeM";
+var CUR=[{c:"AED",s:"د.إ"},{c:"USD",s:"$"},{c:"EUR",s:"€"},{c:"GBP",s:"£"},{c:"SAR",s:"﷼"}];
+var SEEDS=[{id:"s1",brand:"Toyota",engineNo:"2GR-FE-78441",qty:1,status:"Available",purchasePrice:4500,sellingPrice:7200,datePurchased:"2025-11-15",dateSold:"",supplier:"Al Futtaim Motors"},{id:"s2",brand:"Nissan",engineNo:"VQ35DE-91022",qty:1,status:"Available",purchasePrice:3800,sellingPrice:6100,datePurchased:"2025-12-01",dateSold:"",supplier:"Gulf Engines Co"},{id:"s3",brand:"BMW",engineNo:"N55B30-44891",qty:1,status:"Sold",purchasePrice:6200,sellingPrice:9800,datePurchased:"2025-10-20",dateSold:"2026-01-10",supplier:"Euro Parts DMCC"},{id:"s4",brand:"Mercedes",engineNo:"M276-DE35-55120",qty:1,status:"Available",purchasePrice:7100,sellingPrice:11500,datePurchased:"2026-01-05",dateSold:"",supplier:"Al Futtaim Motors"}];
+var SUPS=[{id:"sp1",name:"Al Futtaim Motors",phone:"+971-50-1234567",email:"sales@alfuttaim.ae"},{id:"sp2",name:"Gulf Engines Co",phone:"+971-55-9876543",email:"info@gulfengines.com"},{id:"sp3",name:"Euro Parts DMCC",phone:"+971-52-4561230",email:"orders@europarts.ae"}];
+
+function uid(){return Math.random().toString(36).substr(2,9)+Date.now().toString(36)}
+function td(){return new Date().toISOString().split(“T”)[0]}
+
+var S={fb:false,tab:“inventory”,inv:SEEDS.slice(),sales:[],quotes:[],sups:SUPS.slice(),
+co:{name:“DRIVETRAIN TRADING FZ LLC”,trn:“100XXXXXXXXX”,address:“SHARJAH, UAE - INDUSTRIAL AREA 10”,phone:”+971-XX-XXXXXXX”,email:“info@drivetraintrading.com”},
+cur:CUR[0],q:””,exS:null,supQ:””,
+iDt:td(),iCli:{n:””,a:””},iIt:[],iPrefix:“DT”,iNum:1,iBnk:{a:“DRIVETRAIN TRADING FZ LLC”,i:””,b:””},iTrm:“Goods not returnable. Payment due 30 days.”,iAuth:””,
+qDt:td(),qCli:{n:””,a:””},qIt:[],qPrefix:“QT”,qNum:1,qBnk:{a:“DRIVETRAIN TRADING FZ LLC”,i:””,b:””},qTrm:“Valid 14 days. Prices subject to change.”,qAuth:””};
+
+function toast(m,t){t=t||“S”;var id=uid();var d=document.createElement(“div”);d.className=“toast t”+t;d.innerHTML=m+’<span style="cursor:pointer;margin-left:auto" onclick="this.parentElement.remove()">✕</span>’;document.getElementById(“toasts”).appendChild(d);setTimeout(function(){if(d.parentElement)d.remove()},3000)}
+
+function dbS(c,id,d){try{db.collection(c).doc(id).set(d)}catch(e){}}
+function dbD(c,id){try{db.collection(c).doc(id).delete()}catch(e){}}
+
+firebase.auth().signInAnonymously().then(function(){
+S.fb=true;toast(“Cloud connected!”);
+db.collection(“inventory”).onSnapshot(function(snap){var d=[];snap.forEach(function(x){d.push(Object.assign({id:x.id},x.data()))});if(!d.length){SEEDS.forEach(function(e){db.collection(“inventory”).doc(e.id).set(e)});SUPS.forEach(function(s){db.collection(“suppliers”).doc(s.id).set(s)})}else{S.inv=d}render()});
+db.collection(“sales”).onSnapshot(function(snap){var d=[];snap.forEach(function(x){d.push(Object.assign({id:x.id},x.data()))});d.sort(function(a,b){return(b.createdAt||0)-(a.createdAt||0)});S.sales=d;if(d.length){var mx=0;d.forEach(function(s){if((s.invoiceNumber||0)>mx)mx=s.invoiceNumber});S.iNum=mx+1}render()});
+db.collection(“quotes”).onSnapshot(function(snap){var d=[];snap.forEach(function(x){d.push(Object.assign({id:x.id},x.data()))});d.sort(function(a,b){return(b.createdAt||0)-(a.createdAt||0)});S.quotes=d;if(d.length){var mx=0;d.forEach(function(s){if((s.quoteNumber||0)>mx)mx=s.quoteNumber});S.qNum=mx+1}render()});
 render();
-}catch(e){console.error(e);toast(“Offline mode”,“w”);render()}
-})();
+}).catch(function(e){toast(“Offline mode”,“W”);render()});
 
-function compImg(file){return new Promise((res,rej)=>{const img=new Image();const r=new FileReader();r.onload=e=>{img.onload=()=>{const c=document.createElement(“canvas”);let w=img.width,h=img.height;if(w>1024||h>1024){if(w>h){h=Math.round(h*1024/w);w=1024}else{w=Math.round(w*1024/h);h=1024}}c.width=w;c.height=h;c.getContext(“2d”).drawImage(img,0,0,w,h);res(c.toDataURL(“image/jpeg”,0.7))};img.onerror=rej;img.src=e.target.result};r.onerror=rej;r.readAsDataURL(file)})}
+function xcsv(fn,h,rows){var c=[h.join(”,”)];rows.forEach(function(r){c.push(r.map(function(x){return’”’+String(x==null?””:x).replace(/”/g,’””’)+’”’}).join(”,”))});var b=new Blob([c.join(”\n”)],{type:“text/csv”});var u=URL.createObjectURL(b);var a=document.createElement(“a”);a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);toast(fn+” exported”)}
 
-async function runAI(b64){
-try{
-const resp=await fetch(“https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=”+GEMINI_KEY,{method:“POST”,headers:{“Content-Type”:“application/json”},body:JSON.stringify({contents:[{parts:[{text:‘Extract the engine brand, serial number, and price from this image. Return ONLY a JSON array:[{“brand”:””,“engineNo”:””,“qty”:1,“purchasePrice”:0,“sellingPrice”:0,“supplier”:“Unknown”}]’},{inlineData:{mimeType:“image/jpeg”,data:b64.split(”,”)[1]}}]}],generationConfig:{responseMimeType:“application/json”}})});
-const d=await resp.json();const txt=d?.candidates?.[0]?.content?.parts?.[0]?.text||””;
-const parsed=JSON.parse(txt.replace(/`json\n?/g,"").replace(/`/g,””).trim());
-if(Array.isArray(parsed)&&parsed.length){
-const has=new Set(state.inv.map(e=>e.engineNo?.toLowerCase()));
-const nw=parsed.filter(p=>!has.has(p.engineNo?.toLowerCase())).map(p=>({id:uid(),brand:p.brand||””,engineNo:p.engineNo||””,qty:p.qty||1,status:“Available”,purchasePrice:p.purchasePrice||0,sellingPrice:p.sellingPrice||0,datePurchased:td(),dateSold:””,supplier:p.supplier||“Unknown”}));
-nw.forEach(e=>{state.inv.unshift(e);dbS(“inventory”,e.id,e)});
-toast(“Found “+parsed.length+” engine(s)!”);closeModal();render();
-}else toast(“None found”,“e”);
-}catch(e){toast(“AI error”,“e”)}
-}
+function compImg(file,cb){var img=new Image();var r=new FileReader();r.onload=function(e){img.onload=function(){var c=document.createElement(“canvas”);var w=img.width,h=img.height;if(w>1024||h>1024){if(w>h){h=Math.round(h*1024/w);w=1024}else{w=Math.round(w*1024/h);h=1024}}c.width=w;c.height=h;c.getContext(“2d”).drawImage(img,0,0,w,h);cb(c.toDataURL(“image/jpeg”,0.7))};img.src=e.target.result};r.readAsDataURL(file)}
 
-window.handleAIFile=async function(inp){const f=inp.files?.[0];if(!f)return;try{const b=await compImg(f);await runAI(b)}catch{toast(“Failed”,“e”)}};
+function runAI(b64){
+fetch(“https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=”+GKEY,{method:“POST”,headers:{“Content-Type”:“application/json”},body:JSON.stringify({contents:[{parts:[{text:‘Extract engine brand, serial number, price from this image. Return ONLY JSON array:[{“brand”:””,“engineNo”:””,“qty”:1,“purchasePrice”:0,“sellingPrice”:0,“supplier”:“Unknown”}]’},{inlineData:{mimeType:“image/jpeg”,data:b64.split(”,”)[1]}}]}],generationConfig:{responseMimeType:“application/json”}})})
+.then(function(r){return r.json()}).then(function(d){
+var txt=d&&d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0]?d.candidates[0].content.parts[0].text:””;
+try{var p=JSON.parse(txt.replace(/`json\n?/g,"").replace(/`/g,””).trim());
+if(Array.isArray(p)&&p.length){var has={};S.inv.forEach(function(e){has[(e.engineNo||””).toLowerCase()]=1});
+p.forEach(function(x){if(!has[(x.engineNo||””).toLowerCase()]){var n={id:uid(),brand:x.brand||””,engineNo:x.engineNo||””,qty:x.qty||1,status:“Available”,purchasePrice:x.purchasePrice||0,sellingPrice:x.sellingPrice||0,datePurchased:td(),dateSold:””,supplier:x.supplier||“Unknown”};S.inv.unshift(n);dbS(“inventory”,n.id,n)}});
+toast(“Found “+p.length+” engine(s)!”);closeModal();render()}else{toast(“None found”,“E”)}}catch(e){toast(“Parse error”,“E”)}
+}).catch(function(e){toast(“AI error”,“E”)})}
 
-function closeModal(){const m=$(”#modal”);if(m)m.remove()}
-function openModal(html,wide){closeModal();const d=document.createElement(“div”);d.id=“modal”;d.className=“modal-bg”;d.onclick=e=>{if(e.target===d)closeModal()};d.innerHTML=`<div class="modal-box ${wide?"wide":""}">${html}</div>`;document.body.appendChild(d)}
+function handleAIFile(inp){var f=inp.files&&inp.files[0];if(!f)return;compImg(f,function(b64){runAI(b64)})}
 
-window.openScan=function(){openModal(`
+function closeModal(){document.getElementById(“modal”).innerHTML=””}
+function openModal(h,wide){document.getElementById(“modal”).innerHTML=’<div class="modalBg" onclick="if(event.target===this)closeModal()"><div class=“modalBox ‘+(wide?“wide”:””)+’”>’+h+’</div></div>’}
 
-<h2 class="bb" style="font-size:20px;text-transform:uppercase;margin:0 0 12px">🔍 AI Scanner</h2>
-<div style="display:flex;gap:4px;margin-bottom:12px">
-<label class="btn btn-r" style="flex:1;justify-content:center;cursor:pointer">📷 Upload<input type="file" accept="image/*" style="display:none" onchange="handleAIFile(this)"></label>
-<label class="btn btn-r" style="flex:1;justify-content:center;cursor:pointer">📸 Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleAIFile(this)"></label>
-</div>
-<p style="font-size:10px;color:#6b7280;text-align:center">Upload or photograph engine labels to auto-add to inventory</p>
-`)};
+function openScan(){openModal(’<h2 class="bb" style="font-size:20px;text-transform:uppercase;margin-bottom:12px">🔍 AI Scanner</h2><div style="display:flex;gap:4px;margin-bottom:12px"><label class="btn btnR" style="flex:1;justify-content:center;cursor:pointer">📷 Upload<input type="file" accept="image/*" style="display:none" onchange="handleAIFile(this)"></label><label class="btn btnR" style="flex:1;justify-content:center;cursor:pointer">📸 Camera<input type="file" accept="image/*" capture="environment" style="display:none" onchange="handleAIFile(this)"></label></div><p style="font-size:10px;color:#6b7280;text-align:center">Upload or photograph engine labels to auto-add to inventory</p>’)}
 
-window.openStockSel=function(target){
-const avail=state.inv.filter(e=>e.status===“Available”);
-openModal(`<h2 class="bb" style="font-size:20px;text-transform:uppercase;margin:0 0 12px">Select Stock → ${target===“i”?“Invoice”:“Quotation”}</h2>
+function openStockSel(t){var av=S.inv.filter(function(e){return e.status===“Available”});var h=’<h2 class="bb" style="font-size:20px;text-transform:uppercase;margin-bottom:12px">Select Stock → ‘+(t===“i”?“Invoice”:“Quotation”)+”</h2><div style='max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px'>”;if(!av.length)h+=”<p style='color:#6b7280;text-align:center;padding:24px'>No stock</p>”;av.forEach(function(e){h+=’<button class=“btn” style=“justify-content:space-between;width:100%” onclick=“addStockTo('’+t+”’,’”+e.id+”’)"><span><b>”+e.brand+”</b> <span style='color:#9ca3af;font-size:10px'>”+e.engineNo+”</span></span><span style='color:#fca5a5'>”+S.cur.s+” “+e.sellingPrice.toLocaleString()+”</span></button>”});h+=”</div>”;openModal(h,true)}
 
-<div style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto">
-${avail.length?avail.map(e=>`<button class="btn" style="justify-content:space-between;width:100%" onclick="addStockTo('${target}','${e.id}')">
-<span><b>${e.brand}</b> <span style="color:#9ca3af;font-size:10px">${e.engineNo}</span></span>
-<span style="color:#fca5a5">${state.cur.s} ${e.sellingPrice?.toLocaleString()}</span></button>`).join(""):"<p style='color:#6b7280;text-align:center;padding:24px'>No stock available</p>"}
-</div>`,true)};
+function addStockTo(t,eid){var e=S.inv.filter(function(x){return x.id===eid})[0];if(!e)return;var it={id:uid(),code:e.engineNo,desc:e.brand+” Engine - “+e.engineNo,qty:e.qty||1,pr:e.sellingPrice||0};if(t===“i”){it.eid=e.id;S.iIt.push(it)}else{S.qIt.push(it)}toast(“Added”);closeModal();render()}
 
-window.addStockTo=function(target,eid){
-const e=state.inv.find(x=>x.id===eid);if(!e)return;
-const item={id:uid(),code:e.engineNo,desc:e.brand+” Engine - “+e.engineNo,qty:e.qty||1,pr:e.sellingPrice||0,eid:target===“i”?e.id:undefined};
-if(target===“i”)state.iIt.push(item);else state.qIt.push(item);
-toast(“Added”);closeModal();render()};
+function addEngine(){var n={id:uid(),brand:””,engineNo:””,qty:1,status:“Available”,purchasePrice:0,sellingPrice:0,datePurchased:td(),dateSold:””,supplier:””};S.inv.unshift(n);dbS(“inventory”,n.id,n);render()}
+function delEngine(id){S.inv=S.inv.filter(function(e){return e.id!==id});dbD(“inventory”,id);toast(“Deleted”);render()}
+function togStat(id){var e=S.inv.filter(function(x){return x.id===id})[0];if(e){e.status=e.status===“Available”?“Sold”:“Available”;dbS(“inventory”,e.id,e);render()}}
+function updEng(id,f,v){var e=S.inv.filter(function(x){return x.id===id})[0];if(e){e[f]=(f===“qty”||f===“purchasePrice”||f===“sellingPrice”)?Number(v):v;dbS(“inventory”,e.id,e)}}
 
-window.setTab=function(t){state.tab=t;render()};
-window.addEngine=function(){const n={id:uid(),brand:””,engineNo:””,qty:1,status:“Available”,purchasePrice:0,sellingPrice:0,datePurchased:td(),dateSold:””,supplier:””};state.inv.unshift(n);dbS(“inventory”,n.id,n);render()};
-window.delEngine=function(id){state.inv=state.inv.filter(e=>e.id!==id);dbD(“inventory”,id);toast(“Deleted”);render()};
-window.toggleStatus=function(id){const e=state.inv.find(x=>x.id===id);if(e){e.status=e.status===“Available”?“Sold”:“Available”;dbS(“inventory”,e.id,e);render()}};
-window.updEngine=function(id,f,v){const e=state.inv.find(x=>x.id===id);if(e){e[f]=f===“qty”||f===“purchasePrice”||f===“sellingPrice”?Number(v):v;dbS(“inventory”,e.id,e)}};
+function addDocRow(t){var it={id:uid(),code:””,desc:””,qty:1,pr:0};if(t===“i”)S.iIt.push(it);else S.qIt.push(it);render()}
+function rmDocRow(t,id){if(t===“i”)S.iIt=S.iIt.filter(function(x){return x.id!==id});else S.qIt=S.qIt.filter(function(x){return x.id!==id});render()}
+function updDoc(t,id,f,v){var arr=t===“i”?S.iIt:S.qIt;var it=arr.filter(function(x){return x.id===id})[0];if(it)it[f]=(f===“qty”||f===“pr”)?Number(v):v}
 
-window.addDocRow=function(t){const arr=t===“i”?state.iIt:state.qIt;arr.push({id:uid(),code:””,desc:””,qty:1,pr:0});render()};
-window.rmDocRow=function(t,id){if(t===“i”)state.iIt=state.iIt.filter(x=>x.id!==id);else state.qIt=state.qIt.filter(x=>x.id!==id);render()};
-window.updDocRow=function(t,id,f,v){const arr=t===“i”?state.iIt:state.qIt;const it=arr.find(x=>x.id===id);if(it)it[f]=f===“qty”||f===“pr”?Number(v):v};
+function saveInvoice(){if(!S.iIt.length){toast(“Add items”,“E”);return}var sub=0;S.iIt.forEach(function(i){sub+=(i.qty||0)*(i.pr||0)});var total=sub+sub*0.05;
+var iv={id:uid(),invoicePrefix:S.iPrefix,invoiceNumber:S.iNum,date:S.iDt,clientInfo:{name:S.iCli.n,address:S.iCli.a},items:S.iIt.slice(),totalAmount:total,createdAt:Date.now()};
+S.sales.unshift(iv);dbS(“sales”,iv.id,iv);
+S.iIt.forEach(function(i){if(i.eid){var e=S.inv.filter(function(x){return x.id===i.eid})[0];if(e){e.status=“Sold”;e.dateSold=S.iDt;dbS(“inventory”,e.id,e)}}});
+toast(“Invoice saved & stock updated!”);S.iIt=[];S.iCli={n:””,a:””};S.iNum++;render()}
 
-window.saveInvoice=function(){
-if(!state.iIt.length){toast(“Add items”,“e”);return}
-const sub=state.iIt.reduce((s,i)=>s+(i.qty||0)*(i.pr||0),0);const total=sub+sub*0.05;
-const iv={id:uid(),invoicePrefix:state.iPrefix,invoiceNumber:state.iNum,date:state.iDt,clientInfo:{name:state.iCli.n,address:state.iCli.a},items:[…state.iIt],totalAmount:total,createdAt:Date.now()};
-state.sales.unshift(iv);dbS(“sales”,iv.id,iv);
-state.iIt.filter(i=>i.eid).forEach(i=>{const e=state.inv.find(x=>x.id===i.eid);if(e){e.status=“Sold”;e.dateSold=state.iDt;dbS(“inventory”,e.id,e)}});
-toast(“Invoice saved & stock updated!”);state.iIt=[];state.iCli={n:””,a:””};state.iNum++;render()};
+function saveQuote(){if(!S.qIt.length){toast(“Add items”,“E”);return}var sub=0;S.qIt.forEach(function(i){sub+=(i.qty||0)*(i.pr||0)});var total=sub+sub*0.05;
+var qt={id:uid(),quotePrefix:S.qPrefix,quoteNumber:S.qNum,date:S.qDt,clientInfo:{name:S.qCli.n,address:S.qCli.a},items:S.qIt.slice(),totalAmount:total,createdAt:Date.now()};
+S.quotes.unshift(qt);dbS(“quotes”,qt.id,qt);toast(“Quotation saved!”);S.qIt=[];S.qCli={n:””,a:””};S.qNum++;render()}
 
-window.saveQuote=function(){
-if(!state.qIt.length){toast(“Add items”,“e”);return}
-const sub=state.qIt.reduce((s,i)=>s+(i.qty||0)*(i.pr||0),0);const total=sub+sub*0.05;
-const qt={id:uid(),quotePrefix:state.qPrefix,quoteNumber:state.qNum,date:state.qDt,clientInfo:{name:state.qCli.n,address:state.qCli.a},items:[…state.qIt],totalAmount:total,createdAt:Date.now()};
-state.quotes.unshift(qt);dbS(“quotes”,qt.id,qt);
-toast(“Quotation saved!”);state.qIt=[];state.qCli={n:””,a:””};state.qNum++;render()};
-
-window.openSalesHist=function(){
-const s=state.sales;
-openModal(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 class="bb" style="font-size:20px;text-transform:uppercase;margin:0">Invoice History</h2><button onclick="closeModal()" style="background:none;border:none;color:#9ca3af;font-size:18px;cursor:pointer">✕</button></div> <button class="btn" style="width:100%;justify-content:center;margin-bottom:12px" onclick="xcsv('invoices.csv',['Ref','Date','Client','Total'],${JSON.stringify(s.map(x=>[x.invoicePrefix+'-'+String(x.invoiceNumber).padStart(6,'0'),x.date,x.clientInfo?.name,x.totalAmount]))})">📥 Export Excel</button> ${s.length?s.map(x=>`<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between"><b style="font-size:12px">${x.invoicePrefix}-${String(x.invoiceNumber).padStart(6,“0”)}</b><span style="font-size:10px;color:#6b7280">${x.date}</span></div><p style="font-size:10px;color:#9ca3af;margin:2px 0">${x.clientInfo?.name||”—”}</p><p style="color:#fca5a5;font-weight:700;font-size:12px;margin:0">${state.cur.s} ${x.totalAmount?.toLocaleString()}</p></div>`).join(""):"<p style='color:#6b7280;text-align:center;padding:32px'>None yet</p>"}`)};
-
-window.openQuoteHist=function(){
-const q=state.quotes;
-openModal(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h2 class="bb" style="font-size:20px;text-transform:uppercase;margin:0">Quote History</h2><button onclick="closeModal()" style="background:none;border:none;color:#9ca3af;font-size:18px;cursor:pointer">✕</button></div> <button class="btn" style="width:100%;justify-content:center;margin-bottom:12px" onclick="xcsv('quotations.csv',['Ref','Date','Client','Total'],${JSON.stringify(q.map(x=>[x.quotePrefix+'-'+String(x.quoteNumber).padStart(6,'0'),x.date,x.clientInfo?.name,x.totalAmount]))})">📥 Export Excel</button> ${q.length?q.map(x=>`<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between"><b style="font-size:12px">${x.quotePrefix}-${String(x.quoteNumber).padStart(6,“0”)}</b><span style="font-size:10px;color:#6b7280">${x.date}</span></div><p style="font-size:10px;color:#9ca3af;margin:2px 0">${x.clientInfo?.name||”—”}</p><p style="color:#93c5fd;font-weight:700;font-size:12px;margin:0">${state.cur.s} ${x.totalAmount?.toLocaleString()}</p></div>`).join(""):"<p style='color:#6b7280;text-align:center;padding:32px'>None yet</p>"}`)};
-
-window.toggleSup=function(name){state.exS=state.exS===name?null:name;render()};
-window.closeModal=closeModal;
-window.xcsv=xcsv;
+function openHist(t){var list=t===“i”?S.sales:S.quotes;var label=t===“i”?“Invoice”:“Quote”;var pre=t===“i”?“invoicePrefix”:“quotePrefix”;var num=t===“i”?“invoiceNumber”:“quoteNumber”;
+var csvData=list.map(function(x){return[(x[pre]||“DT”)+”-”+String(x[num]||0).padStart(6,“0”),x.date,x.clientInfo?x.clientInfo.name:””,x.totalAmount]});
+var h=’<div style="display:flex;justify-content:space-between;margin-bottom:12px"><h2 class="bb" style="font-size:20px;text-transform:uppercase">’+label+’ History</h2><button onclick="closeModal()" style="background:none;border:none;color:#9ca3af;font-size:18px;cursor:pointer">✕</button></div>’;
+h+=’<button class="btn" style="width:100%;justify-content:center;margin-bottom:12px" onclick="xcsv(\''+label.toLowerCase()+'s.csv\',[\'Ref\',\'Date\',\'Client\',\'Total\'],'+JSON.stringify(csvData)+')">📥 Export Excel</button>’;
+if(!list.length)h+=”<p style='color:#6b7280;text-align:center;padding:32px'>None yet</p>”;
+list.forEach(function(x){var ref=(x[pre]||””)+”-”+String(x[num]||0).padStart(6,“0”);var clr=t===“i”?”#fca5a5”:”#93c5fd”;h+=’<div style="background:#1f2937;border:1px solid #374151;border-radius:12px;padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between"><b style="font-size:12px">’+ref+’</b><span style="font-size:10px;color:#6b7280">’+(x.date||””)+’</span></div><p style="font-size:10px;color:#9ca3af;margin:2px 0">’+(x.clientInfo?x.clientInfo.name:”—”)+’</p><p style="color:'+clr+';font-weight:700;font-size:12px;margin:0">’+S.cur.s+” “+(x.totalAmount||0).toLocaleString()+”</p></div>”});
+openModal(h)}
+function togSup(n){S.exS=S.exS===n?null:n;render()}
+function setTab(t){S.tab=t;render()}
 
 function docHTML(t){
-const pre=t===“i”?state.iPrefix:state.qPrefix;
-const num=t===“i”?state.iNum:state.qNum;
-const dt=t===“i”?state.iDt:state.qDt;
-const cli=t===“i”?state.iCli:state.qCli;
-const items=t===“i”?state.iIt:state.qIt;
-const bnk=t===“i”?state.iBnk:state.qBnk;
-const trm=t===“i”?state.iTrm:state.qTrm;
-const auth=t===“i”?state.iAuth:state.qAuth;
-const isQ=t===“q”;
-const accent=isQ?”#2563EB”:”#D7261E”;
-const label=isQ?“QUOTATION”:“INVOICE”;
-const sub=items.reduce((s,i)=>s+(i.qty||0)*(i.pr||0),0);
-const vat=sub*0.05;const grd=sub+vat;
+var pre=t===“i”?S.iPrefix:S.qPrefix,num=t===“i”?S.iNum:S.qNum,dt=t===“i”?S.iDt:S.qDt;
+var cli=t===“i”?S.iCli:S.qCli,items=t===“i”?S.iIt:S.qIt;
+var bnk=t===“i”?S.iBnk:S.qBnk,trm=t===“i”?S.iTrm:S.qTrm,auth=t===“i”?S.iAuth:S.qAuth;
+var isQ=t===“q”,accent=isQ?”#2563EB”:”#D7261E”,label=isQ?“QUOTATION”:“INVOICE”;
+var sub=0;items.forEach(function(i){sub+=(i.qty||0)*(i.pr||0)});var vat=sub*0.05,grd=sub+vat;
+var curOpts=””;CUR.forEach(function(c){curOpts+=’<option value=”’+c.c+’”’+(c.c===S.cur.c?” selected”:””)+’>’+c.c+” (”+c.s+”)</option>”});
+var rows=””;items.forEach(function(it){rows+=’<tr style="border-bottom:1px solid #e5e7eb"><td><input class=“inpw” style=“font-family:monospace;font-size:9px” value=”’+it.code+’” onchange=“updDoc('’+t+”’,’”+it.id+”’,‘code’,this.value)"></td><td><input class="inpw" value="”+it.desc+”" onchange="updDoc(’”+t+”’,’”+it.id+”’,‘desc’,this.value)"></td><td><input type="number" class="inpw" style="width:32px;text-align:center" value="”+it.qty+”" onchange="updDoc(’”+t+”’,’”+it.id+”’,‘qty’,this.value);render()"></td><td><input type="number" class="inpw" style="width:64px" value="”+it.pr+”" onchange="updDoc(’”+t+”’,’”+it.id+”’,‘pr’,this.value);render()"></td><td style="font-weight:700;font-size:10px">”+S.cur.s+” “+((it.qty||0)*(it.pr||0)).toLocaleString()+”</td><td><button onclick="rmDocRow(’”+t+”’,’”+it.id+”’)" style="background:none;border:none;color:#9ca3af;cursor:pointer">✕</button></td></tr>”});
+if(!items.length)rows=’<tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;font-size:10px">Add items from stock or custom</td></tr>’;
 
-return `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">
-<button class="btn" onclick="openStockSel('${t}')">📦 From Stock</button>
-<button class="btn" onclick="addDocRow('${t}')">➕ Custom</button>
-
-<div style="flex:1"></div>
-<button class="btn ${isQ?"btn-b":"btn-r"}" onclick="save${isQ?"Quote":"Invoice"}()">${isQ?"💾 Save Quotation":"💾 Save & Deduct"}</button>
-</div>
-<div style="background:#fff;color:#111;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5)">
-<div style="background:#030712;color:#fff;padding:16px">
-<div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
-<div style="flex:1;min-width:200px">
-<input class="inp" style="font-family:'Bebas Neue';font-size:22px;font-weight:900;text-transform:uppercase" value="${state.co.name}" onchange="state.co.name=this.value">
-<div style="font-size:10px;color:#9ca3af;margin-top:4px">
-<p style="margin:2px 0">TRN: <input class="inp" style="width:120px;color:#d1d5db" value="${state.co.trn}" onchange="state.co.trn=this.value"></p>
-<p style="margin:2px 0">📍 <input class="inp" style="color:#d1d5db" value="${state.co.address}" onchange="state.co.address=this.value"></p>
-<p style="margin:2px 0">📞 <input class="inp" style="width:160px;color:#d1d5db" value="${state.co.phone}" onchange="state.co.phone=this.value"></p>
-<p style="margin:2px 0">✉️ <input class="inp" style="width:200px;color:#d1d5db" value="${state.co.email}" onchange="state.co.email=this.value"></p>
-</div></div>
-<div style="text-align:right">
-<p class="bb" style="font-size:22px;color:${accent};margin:0">${label}</p>
-<div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin:4px 0">
-<input class="inp" style="width:50px;text-align:center;background:#1f2937;border-radius:8px;padding:4px;border:1px solid #374151;color:#fff" value="${pre}" onchange="state.${t}Prefix=this.value">
-<span style="color:#6b7280">-</span>
-<input type="number" class="inp" style="width:70px;text-align:center;background:#1f2937;border-radius:8px;padding:4px;border:1px solid #374151;color:#fff" value="${num}" onchange="state.${t}Num=Math.max(1,+this.value)">
-</div>
-<input type="date" class="inp" style="background:#1f2937;border-radius:8px;padding:4px;border:1px solid #374151;width:auto;color:#fff" value="${dt}" onchange="state.${t}Dt=this.value">
-<select class="inp" style="background:#1f2937;border-radius:8px;padding:4px;border:1px solid #374151;width:auto;color:#fff;margin-top:4px" onchange="state.cur=CUR.find(c=>c.c===this.value);render()">
-${CUR.map(c=>`<option value="${c.c}" ${c.c===state.cur.c?"selected":""}>${c.c} (${c.s})</option>`).join("")}
-</select>
-</div></div></div>
-<div style="padding:12px 16px;border-bottom:1px solid #e5e7eb">
-<p style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:#6b7280;margin:0 0 4px">Bill To</p>
-<input class="inp-w" style="font-size:14px;font-weight:700;color:#111" placeholder="Client Name" value="${cli.n}" onchange="state.${t}Cli.n=this.value">
-<textarea class="inp-w" style="font-size:12px;resize:none;color:#4b5563" placeholder="Address" rows="2" onchange="state.${t}Cli.a=this.value">${cli.a}</textarea>
-</div>
-<div style="padding:8px 16px">
-<table><thead><tr style="border-bottom:2px solid #111"><th>Code</th><th>Description</th><th>Q</th><th>Price</th><th>Total</th><th></th></tr></thead><tbody>
-${items.map(it=>`<tr style="border-bottom:1px solid #e5e7eb">
-<td><input class="inp-w" style="font-family:monospace;font-size:9px" value="${it.code}" onchange="updDocRow('${t}','${it.id}','code',this.value)"></td>
-<td><input class="inp-w" value="${it.desc}" onchange="updDocRow('${t}','${it.id}','desc',this.value)"></td>
-<td><input type="number" class="inp-w" style="width:32px;text-align:center" value="${it.qty}" onchange="updDocRow('${t}','${it.id}','qty',this.value);render()"></td>
-<td><input type="number" class="inp-w" style="width:64px" value="${it.pr}" onchange="updDocRow('${t}','${it.id}','pr',this.value);render()"></td>
-<td style="font-weight:700;font-size:10px">${state.cur.s} ${((it.qty||0)*(it.pr||0)).toLocaleString()}</td>
-<td><button onclick="rmDocRow('${t}','${it.id}')" style="background:none;border:none;color:#9ca3af;cursor:pointer">✕</button></td>
-</tr>`).join("")}
-${!items.length?`<tr><td colspan="6" style="text-align:center;padding:24px;color:#9ca3af;font-size:10px">Add items from stock or custom</td></tr>`:""}
-</tbody></table></div>
-<div style="padding:8px 16px;display:flex;justify-content:flex-end"><div style="width:176px;font-size:11px">
-<div style="display:flex;justify-content:space-between"><span style="color:#6b7280">Subtotal</span><span style="font-weight:700">${state.cur.s} ${sub.toLocaleString()}</span></div>
-<div style="display:flex;justify-content:space-between"><span style="color:#6b7280">VAT 5%</span><span style="font-weight:700">${state.cur.s} ${vat.toLocaleString()}</span></div>
-<div style="display:flex;justify-content:space-between;border-top:2px solid #111;padding-top:4px;margin-top:4px"><span style="font-weight:900;text-transform:uppercase;font-size:10px">Total</span><span style="font-weight:900;font-size:14px;color:${accent}">${state.cur.s} ${grd.toLocaleString()}</span></div>
-</div></div>
-<div style="padding:12px 16px;background:#f9fafb;border-top:1px solid #e5e7eb;display:grid;grid-template-columns:1fr 1fr;gap:12px">
-<div><p style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:#6b7280;margin:0 0 4px">Bank Details</p><div style="font-size:10px">
-<p style="margin:2px 0">Account: <input class="inp-w" style="width:140px" value="${bnk.a}" onchange="state.${t}Bnk.a=this.value"></p>
-<p style="margin:2px 0">IBAN: <input class="inp-w" style="width:192px" value="${bnk.i}" onchange="state.${t}Bnk.i=this.value" placeholder="AE00 0000 0000 0000"></p>
-<p style="margin:2px 0">Bank: <input class="inp-w" style="width:140px" value="${bnk.b}" onchange="state.${t}Bnk.b=this.value" placeholder="Emirates NBD"></p>
-</div></div>
-<div><p style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:#6b7280;margin:0 0 4px">Payment Terms</p>
-<textarea class="inp-w" style="resize:none;border:1px solid #d1d5db;border-radius:8px;padding:6px" rows="3" onchange="state.${t}Trm=this.value">${trm}</textarea></div>
-</div>
-<div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
-<div><div style="border-bottom:2px solid #d1d5db;height:40px"></div><p style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:#6b7280;margin:4px 0 0">Customer Signature</p></div>
-<div><div style="border-bottom:2px solid #d1d5db;height:40px"></div><input class="inp-w" style="font-size:9px;margin-top:4px" placeholder="Authorized Signatory Name & Title" value="${auth}" onchange="state.${t}Auth=this.value"></div>
-</div>
-</div>`;
-}
+return ‘<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"><button class=“btn” onclick=“openStockSel('’+t+”’)">📦 Stock</button><button class="btn" onclick="addDocRow(’”+t+”’)">➕ Custom</button><div style="flex:1"></div><button class="btn “+(isQ?“btnB”:“btnR”)+”" onclick="save”+(isQ?“Quote”:“Invoice”)+”()">”+(isQ?“💾 Save Quote”:“💾 Save & Deduct”)+”</button></div>”+
+‘<div style="background:#fff;color:#111;border-radius:16px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.5)">’+
+‘<div style="background:#030712;color:#fff;padding:16px"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:180px"><input class="inp" style="font-family:Bebas Neue;font-size:22px;font-weight:900;text-transform:uppercase" value="'+S.co.name+'" onchange="S.co.name=this.value"><div style="font-size:10px;color:#9ca3af;margin-top:4px"><p style="margin:2px 0">TRN: <input class="inp" style="width:120px;color:#d1d5db" value="'+S.co.trn+'" onchange="S.co.trn=this.value"></p><p style="margin:2px 0">📍<input class="inp" style="color:#d1d5db" value="'+S.co.address+'" onchange="S.co.address=this.value"></p><p style="margin:2px 0">📞<input class="inp" style="width:150px;color:#d1d5db" value="'+S.co.phone+'" onchange="S.co.phone=this.value"></p><p style="margin:2px 0">✉️<input class="inp" style="width:190px;color:#d1d5db" value="'+S.co.email+'" onchange="S.co.email=this.value"></p></div></div>’+
+‘<div style="text-align:right"><p class="bb" style="font-size:22px;color:'+accent+';margin:0">’+label+’</p><div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin:4px 0"><input class="inp" style="width:50px;text-align:center;background:#1f2937;border-radius:8px;padding:4px;border:1px solid #374151" value="'+pre+'" onchange="S.'+t+'Prefix=this.value"><span style="color:#6b7280">-</span><input type="number" class="inp" style="width:70px;text-align:center;background:#1f2937;border-radius:8px;padding:4px;border:1px solid #374151" value="'+num+'" onchange="S.'+t+'Num=Math.max(1,+this.value)"></div><input type="date" class="inp" style="background:#1f2937;border-radius:8px;padding:4px;border:1px solid #374151;width:auto" value="'+dt+'" onchange="S.'+t+'Dt=this.value"><select class="inp" style="background:#1f2937;border-radius:8px;padding:4px;border:1px solid #374151;width:auto;margin-top:4px" onchange="S.cur=CUR.filter(function(c){return c.c===this.value}.bind(this))[0];render()">’+curOpts+’</select></div></div></div>’+
+‘<div style="padding:12px 16px;border-bottom:1px solid #e5e7eb"><p style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:#6b7280;margin:0 0 4px">Bill To</p><input class="inpw" style="font-size:14px;font-weight:700;color:#111" placeholder="Client Name" value="'+cli.n+'" onchange="S.'+t+'Cli.n=this.value"><textarea class="inpw" style="resize:none;font-size:12px;color:#4b5563" placeholder="Address" rows="2" onchange="S.'+t+'Cli.a=this.value">’+cli.a+’</textarea></div>’+
+‘<div style="padding:8px 16px"><table><thead><tr style="border-bottom:2px solid #111"><th>Code</th><th>Description</th><th>Q</th><th>Price</th><th>Total</th><th></th></tr></thead><tbody>’+rows+’</tbody></table></div>’+
+‘<div style="padding:8px 16px;display:flex;justify-content:flex-end"><div style="width:176px;font-size:11px"><div style="display:flex;justify-content:space-between"><span style="color:#6b7280">Subtotal</span><span style="font-weight:700">’+S.cur.s+” “+sub.toLocaleString()+’</span></div><div style="display:flex;justify-content:space-between"><span style="color:#6b7280">VAT 5%</span><span style="font-weight:700">’+S.cur.s+” “+vat.toLocaleString()+’</span></div><div style="display:flex;justify-content:space-between;border-top:2px solid #111;padding-top:4px;margin-top:4px"><span style="font-weight:900;text-transform:uppercase;font-size:10px">Total</span><span style="font-weight:900;font-size:14px;color:'+accent+'">’+S.cur.s+” “+grd.toLocaleString()+”</span></div></div></div>”+
+‘<div style="padding:12px 16px;background:#f9fafb;border-top:1px solid #e5e7eb;display:grid;grid-template-columns:1fr 1fr;gap:12px"><div><p style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:#6b7280;margin:0 0 4px">Bank Details</p><div style="font-size:10px"><p style="margin:2px 0">Account: <input class="inpw" style="width:140px" value="'+bnk.a+'" onchange="S.'+t+'Bnk.a=this.value"></p><p style="margin:2px 0">IBAN: <input class="inpw" style="width:192px" value="'+bnk.i+'" onchange="S.'+t+'Bnk.i=this.value" placeholder="AE00 0000 0000"></p><p style="margin:2px 0">Bank: <input class="inpw" style="width:140px" value="'+bnk.b+'" onchange="S.'+t+'Bnk.b=this.value" placeholder="Emirates NBD"></p></div></div><div><p style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:#6b7280;margin:0 0 4px">Payment Terms</p><textarea class="inpw" style="resize:none;border:1px solid #d1d5db;border-radius:8px;padding:6px" rows="3" onchange="S.'+t+'Trm=this.value">’+trm+’</textarea></div></div>’+
+‘<div style="padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px"><div><div style="border-bottom:2px solid #d1d5db;height:40px"></div><p style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:#6b7280;margin:4px 0 0">Customer Signature</p></div><div><div style="border-bottom:2px solid #d1d5db;height:40px"></div><input class="inpw" style="font-size:9px;margin-top:4px" placeholder="Authorized Signatory Name & Title" value="'+auth+'" onchange="S.'+t+'Auth=this.value"></div></div></div>’}
 
 function render(){
-const inv=state.inv;
-const flt=inv.filter(e=>{const l=state.q.toLowerCase();return !l||[e.brand,e.engineNo,e.supplier].some(f=>f?.toLowerCase().includes(l))});
-const tU=inv.length,aU=inv.filter(e=>e.status===“Available”).length;
-const pr=inv.reduce((s,e)=>s+((e.sellingPrice||0)-(e.purchasePrice||0))*(e.qty||1),0);
+var inv=S.inv,q=S.q.toLowerCase();
+var flt=inv.filter(function(e){return !q||((e.brand||””)+(e.engineNo||””)+(e.supplier||””)).toLowerCase().indexOf(q)>=0});
+var tU=inv.length,aU=inv.filter(function(e){return e.status===“Available”}).length;
+var pr=0;inv.forEach(function(e){pr+=((e.sellingPrice||0)-(e.purchasePrice||0))*(e.qty||1)});
+var agS={};inv.forEach(function(e){var k=(e.supplier||”?”).trim().toLowerCase();if(!agS[k])agS[k]={name:e.supplier||”?”,eng:[],ph:””,em:””};agS[k].eng.push(e)});
+S.sups.forEach(function(s){var k=s.name.trim().toLowerCase();if(!agS[k])agS[k]={name:s.name,eng:[],ph:s.phone,em:s.email};else{agS[k].ph=agS[k].ph||s.phone;agS[k].em=agS[k].em||s.email}});
+var supList=Object.keys(agS).map(function(k){return agS[k]}).filter(function(s){return !S.supQ||(s.name||””).toLowerCase().indexOf((S.supQ||””).toLowerCase())>=0});
 
-const agS={};inv.forEach(e=>{const k=(e.supplier||”?”).trim().toLowerCase();if(!agS[k])agS[k]={name:e.supplier||”?”,eng:[],ph:””,em:””};agS[k].eng.push(e)});
-state.sups.forEach(s=>{const k=s.name.trim().toLowerCase();if(!agS[k])agS[k]={name:s.name,eng:[],ph:s.phone,em:s.email};else{agS[k].ph=agS[k].ph||s.phone;agS[k].em=agS[k].em||s.email}});
-const supList=Object.values(agS);
+var tabs=[[“inventory”,“📦”,“Stock”],[“invoicing”,“📄”,“Invoice”],[“quotation”,“📋”,“Quote”],[“suppliers”,“🚛”,“Supply”]];
+var tabHTML=””;tabs.forEach(function(x){tabHTML+=’<button onclick=“setTab('’+x[0]+’')” style=“display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:8px;border:none;font-size:8px;font-weight:700;text-transform:uppercase;cursor:pointer;background:’+(S.tab===x[0]?”#b91c1c”:“transparent”)+”;color:”+(S.tab===x[0]?”#fff”:”#9ca3af”)+’”>’+x[1]+” “+x[2]+”</button>”});
 
-const root=$(”#root”);
-root.innerHTML=`
+var html=’<header style="position:sticky;top:0;z-index:50;background:rgba(3,7,18,0.95);border-bottom:2px solid #b91c1c;padding:8px"><div style="max-width:1024px;margin:0 auto;display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;background:#b91c1c;border-radius:12px;display:flex;align-items:center;justify-content:center">⚡</div><div><h1 class="bb" style="font-size:17px;text-transform:uppercase">DRIVETRAIN</h1><div style="display:flex;align-items:center;gap:4px"><span style="font-size:7px;color:#6b7280;text-transform:uppercase;letter-spacing:0.15em;font-weight:700">Suite</span><span style=“width:6px;height:6px;border-radius:50%;background:’+(S.fb?”#22c55e”:”#eab308”)+’”></span></div></div></div><nav style="display:flex;gap:2px">’+tabHTML+’</nav><div style="display:flex;gap:2px"><button onclick="openHist(\'i\')" style="padding:6px;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px">📜</button><button onclick="xcsv(\'inventory.csv\',[\'Brand\',\'EngineNo\',\'QTY\',\'Status\',\'Buy\',\'Sell\',\'Supplier\'],S.inv.map(function(e){return[e.brand,e.engineNo,e.qty,e.status,e.purchasePrice,e.sellingPrice,e.supplier]}))" style="padding:6px;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px">📥</button></div></div></header><main style="max-width:1024px;margin:0 auto;padding:12px">’;
 
-<div class="toast-c"></div>
-<header style="position:sticky;top:0;z-index:50;background:rgba(3,7,18,0.95);backdrop-filter:blur(8px);border-bottom:2px solid #b91c1c;padding:8px">
-<div style="max-width:1024px;margin:0 auto;display:flex;align-items:center;justify-content:space-between">
-<div style="display:flex;align-items:center;gap:8px">
-<div style="width:32px;height:32px;background:#b91c1c;border-radius:12px;display:flex;align-items:center;justify-content:center">⚡</div>
-<div><h1 class="bb" style="font-size:17px;margin:0;text-transform:uppercase">DRIVETRAIN</h1>
-<div style="display:flex;align-items:center;gap:4px"><span style="font-size:7px;color:#6b7280;text-transform:uppercase;letter-spacing:0.15em;font-weight:700">Suite</span><span style="width:6px;height:6px;border-radius:50%;background:${state.fb?"#22c55e":"#eab308"}"></span></div></div>
-</div>
-<nav style="display:flex;gap:2px">
-${[["inventory","📦","Stock"],["invoicing","📄","Invoice"],["quotation","📋","Quote"],["suppliers","🚛","Supply"]].map(([k,ic,l])=>`<button onclick="setTab('${k}')" style="display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:8px;border:none;font-size:8px;font-weight:700;text-transform:uppercase;cursor:pointer;background:${state.tab===k?"#b91c1c":"transparent"};color:${state.tab===k?"#fff":"#9ca3af"}">${ic} ${l}</button>`).join("")}
-</nav>
-<div style="display:flex;gap:2px">
-<button onclick="openSalesHist()" style="padding:6px;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px">📜</button>
-<button onclick="xcsv('inventory.csv',['Brand','EngineNo','QTY','Status','Buy','Sell','Supplier'],state.inv.map(e=>[e.brand,e.engineNo,e.qty,e.status,e.purchasePrice,e.sellingPrice,e.supplier]))" style="padding:6px;background:none;border:none;color:#9ca3af;cursor:pointer;font-size:14px">📥</button>
-</div></div></header>
+if(S.tab===“inventory”){
+html+=’<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"><div class="card cardA" onclick="openScan()"><span style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;opacity:0.7">AI Scan</span><span class="bb" style="font-size:24px">SCAN</span></div><div class="card"><span style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;opacity:0.7">Total</span><span class="bb" style="font-size:24px">’+tU+’</span></div><div class="card"><span style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;opacity:0.7">Available</span><span class="bb" style="font-size:24px">’+aU+’</span></div><div class="card"><span style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;opacity:0.7">Profit</span><span class="bb" style="font-size:24px">’+S.cur.s+pr.toLocaleString()+’</span></div></div>’;
+html+=’<div style="display:flex;gap:6px;margin-bottom:12px"><input class="inp" style="flex:1;background:#111827;border:2px solid #374151;border-radius:12px;padding:8px 12px;font-size:12px" placeholder="🔍 Search..." value="'+S.q+'" oninput="S.q=this.value;render()"><button class="btn btnR" onclick="addEngine()">➕</button></div>’;
+html+=’<div style="overflow-x:auto;border:2px solid #374151;border-radius:12px"><table><thead><tr style="background:#111827;border-bottom:2px solid #374151"><th>Brand</th><th>Engine No</th><th>Q</th><th>Status</th><th>Buy</th><th>Sell</th><th>Date</th><th>Supplier</th><th></th></tr></thead><tbody>’;
+flt.forEach(function(e){html+=’<tr style="border-bottom:1px solid #1f2937"><td><input class=“inp” value=”’+e.brand+’” onchange=“updEng('’+e.id+”’,‘brand’,this.value)"></td><td><input class="inp" style="font-family:monospace;font-size:9px" value="”+e.engineNo+”" onchange="updEng(’”+e.id+”’,‘engineNo’,this.value)"></td><td><input type="number" class="inp" style="width:28px;text-align:center" value="”+e.qty+”" onchange="updEng(’”+e.id+”’,‘qty’,this.value)"></td><td><button onclick="togStat(’”+e.id+”’)" class="”+(e.status===“Available”?“pillG”:“pillR”)+”">”+e.status+”</button></td><td><input type="number" class="inp" style="width:56px" value="”+e.purchasePrice+”" onchange="updEng(’”+e.id+”’,‘purchasePrice’,this.value)"></td><td><input type="number" class="inp" style="width:56px" value="”+e.sellingPrice+”" onchange="updEng(’”+e.id+”’,‘sellingPrice’,this.value)"></td><td><input type="date" class="inp" style="font-size:9px;color:#9ca3af" value="”+e.datePurchased+”" onchange="updEng(’”+e.id+”’,‘datePurchased’,this.value)"></td><td><input class="inp" style="color:#9ca3af" value="”+e.supplier+”" onchange="updEng(’”+e.id+”’,‘supplier’,this.value)"></td><td><button onclick="delEngine(’”+e.id+”’)" style="background:none;border:none;color:#4b5563;cursor:pointer">🗑️</button></td></tr>”});
+if(!flt.length)html+=’<tr><td colspan="9" style="text-align:center;padding:32px;color:#4b5563">No engines</td></tr>’;
+html+=”</tbody></table></div>”}
 
-<main style="max-width:1024px;margin:0 auto;padding:12px">
-${state.tab==="inventory"?`
-<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px">
-<div class="card card-a" onclick="openScan()"><span style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;opacity:0.7">AI Scan</span><span class="bb" style="font-size:24px">SCAN</span></div>
-<div class="card"><span style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;opacity:0.7">Total</span><span class="bb" style="font-size:24px">${tU}</span></div>
-<div class="card"><span style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;opacity:0.7">Available</span><span class="bb" style="font-size:24px">${aU}</span></div>
-<div class="card"><span style="font-size:8px;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;opacity:0.7">Profit</span><span class="bb" style="font-size:24px">${state.cur.s}${pr.toLocaleString()}</span></div>
-</div>
-<div style="display:flex;gap:6px;margin-bottom:12px">
-<input class="inp" style="flex:1;background:#111827;border:2px solid #374151;border-radius:12px;padding:8px 12px;font-size:12px" placeholder="🔍 Search..." value="${state.q}" oninput="state.q=this.value;render()">
-<button class="btn btn-r" onclick="addEngine()">➕</button>
-</div>
-<div style="overflow-x:auto;border:2px solid #374151;border-radius:12px">
-<table><thead><tr style="background:#111827;border-bottom:2px solid #374151"><th>Brand</th><th>Engine No</th><th>Q</th><th>Status</th><th>Buy</th><th>Sell</th><th>Date</th><th>Supplier</th><th></th></tr></thead><tbody>
-${flt.map(e=>`<tr style="border-bottom:1px solid #1f2937">
-<td><input class="inp" value="${e.brand}" onchange="updEngine('${e.id}','brand',this.value)"></td>
-<td><input class="inp" style="font-family:monospace;font-size:9px" value="${e.engineNo}" onchange="updEngine('${e.id}','engineNo',this.value)"></td>
-<td><input type="number" class="inp" style="width:28px;text-align:center" value="${e.qty}" onchange="updEngine('${e.id}','qty',this.value)"></td>
-<td><button onclick="toggleStatus('${e.id}')" class="${e.status==="Available"?"pill-g":"pill-r"}">${e.status}</button></td>
-<td><input type="number" class="inp" style="width:56px" value="${e.purchasePrice}" onchange="updEngine('${e.id}','purchasePrice',this.value)"></td>
-<td><input type="number" class="inp" style="width:56px" value="${e.sellingPrice}" onchange="updEngine('${e.id}','sellingPrice',this.value)"></td>
-<td><input type="date" class="inp" style="font-size:9px;color:#9ca3af" value="${e.datePurchased}" onchange="updEngine('${e.id}','datePurchased',this.value)"></td>
-<td><input class="inp" style="color:#9ca3af" value="${e.supplier}" onchange="updEngine('${e.id}','supplier',this.value)"></td>
-<td><button onclick="delEngine('${e.id}')" style="background:none;border:none;color:#4b5563;cursor:pointer">🗑️</button></td>
-</tr>`).join("")}
-${!flt.length?'<tr><td colspan="9" style="text-align:center;padding:32px;color:#4b5563">No engines</td></tr>':""}
-</tbody></table></div>
-`:""}
+if(S.tab===“invoicing”)html+=docHTML(“i”);
+if(S.tab===“quotation”)html+=’<div style="display:flex;justify-content:flex-end;margin-bottom:8px"><button class="btn" onclick="openHist(\'q\')">📜 Quote History</button></div>’+docHTML(“q”);
 
-${state.tab===“invoicing”?docHTML(“i”):””}
+if(S.tab===“suppliers”){
+html+=’<div style="margin-bottom:12px"><input class="inp" style="background:#111827;border:2px solid #374151;border-radius:12px;padding:8px 12px;font-size:12px;width:100%" placeholder="🔍 Search suppliers..." oninput="S.supQ=this.value;render()"></div><div style="display:flex;flex-direction:column;gap:8px">’;
+supList.forEach(function(s){
+html+=’<div style="background:#111827;border:2px solid #374151;border-radius:16px;overflow:hidden"><button onclick=“togSup('’+s.name.replace(/’/g,”\’”)+’')” style=“width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px;background:none;border:none;color:#fff;cursor:pointer;text-align:left”><div style="display:flex;align-items:center;gap:8px"><div style="width:32px;height:32px;background:#b91c1c;border-radius:12px;display:flex;align-items:center;justify-content:center">🏢</div><div><h3 style="font-weight:700;text-transform:uppercase;font-size:12px;margin:0">’+s.name+’</h3><div style="font-size:9px;color:#6b7280;margin-top:2px">’+(s.ph?“📞 “+s.ph+” “:””)+(s.em?“✉️ “+s.em:””)+”</div></div></div><div style='display:flex;align-items:center;gap:6px'><span class='bb' style='font-size:18px'>”+s.eng.length+”</span><span>”+(S.exS===s.name?“▲”:“▼”)+”</span></div></button>”;
+if(S.exS===s.name&&s.eng.length){html+=’<div style="border-top:1px solid #1f2937;padding:0 12px 8px"><table style="margin-top:4px"><thead><tr style="border-bottom:1px solid #1f2937"><th>Model</th><th>Serial</th><th>Price</th><th>Status</th></tr></thead><tbody>’;
+s.eng.forEach(function(e){html+=’<tr style="border-bottom:1px solid rgba(31,41,55,0.5)"><td style="font-weight:700;font-size:9px">’+e.brand+’</td><td style="color:#9ca3af;font-family:monospace;font-size:9px">’+e.engineNo+’</td><td style="color:#9ca3af;font-size:9px">’+S.cur.s+” “+(e.purchasePrice||0).toLocaleString()+’</td><td><span class=”’+(e.status===“Available”?“pillG”:“pillR”)+’”>’+e.status+”</span></td></tr>”});
+html+=”</tbody></table></div>”}html+=”</div>”});
+if(!supList.length)html+=’<p style="text-align:center;padding:40px;color:#4b5563;font-size:12px">No suppliers</p>’;
+html+=”</div>”}
 
-${state.tab===“quotation”?`
-
-<div style="display:flex;justify-content:flex-end;margin-bottom:8px">
-<button class="btn" onclick="openQuoteHist()">📜 Quote History</button>
-</div>${docHTML("q")}`:""}
-
-${state.tab===“suppliers”?`
-
-<div style="margin-bottom:12px"><input class="inp" style="background:#111827;border:2px solid #374151;border-radius:12px;padding:8px 12px;font-size:12px;width:100%" placeholder="🔍 Search suppliers..." oninput="state.supQ=this.value;render()"></div>
-<div style="display:flex;flex-direction:column;gap:8px">
-${supList.filter(s=>!state.supQ||s.name.toLowerCase().includes(state.supQ?.toLowerCase()||"")).map(s=>`
-<div style="background:#111827;border:2px solid #374151;border-radius:16px;overflow:hidden">
-<button onclick="toggleSup('${s.name}')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px;background:none;border:none;color:#fff;cursor:pointer;text-align:left">
-<div style="display:flex;align-items:center;gap:8px">
-<div style="width:32px;height:32px;background:#b91c1c;border-radius:12px;display:flex;align-items:center;justify-content:center">🏢</div>
-<div><h3 style="font-weight:700;text-transform:uppercase;font-size:12px;margin:0">${s.name}</h3>
-<div style="display:flex;gap:8px;margin-top:2px;font-size:9px;color:#6b7280">${s.ph?"📞 "+s.ph:""}${s.em?" ✉️ "+s.em:""}</div></div></div>
-<div style="display:flex;align-items:center;gap:6px"><span class="bb" style="font-size:18px">${s.eng.length}</span><span>${state.exS===s.name?"▲":"▼"}</span></div>
-</button>
-${state.exS===s.name&&s.eng.length?`<div style="border-top:1px solid #1f2937;padding:0 12px 8px">
-<table style="margin-top:4px"><thead><tr style="border-bottom:1px solid #1f2937"><th>Model</th><th>Serial</th><th>Price</th><th>Status</th></tr></thead><tbody>
-${s.eng.map(e=>`<tr style="border-bottom:1px solid rgba(31,41,55,0.5)"><td style="font-weight:700;font-size:9px">${e.brand}</td><td style="color:#9ca3af;font-family:monospace;font-size:9px">${e.engineNo}</td><td style="color:#9ca3af;font-size:9px">${state.cur.s} ${e.purchasePrice?.toLocaleString()}</td><td><span class="${e.status==="Available"?"pill-g":"pill-r"}">${e.status}</span></td></tr>`).join("")}
-</tbody></table></div>`:""}
-</div>`).join("")}
-${!supList.length?'<p style="text-align:center;padding:40px;color:#4b5563;font-size:12px">No suppliers</p>':""}
-</div>`:""}
-</main>`;
-renderToasts();
-}
-
-window.state=state;window.CUR=CUR;window.render=render;
+html+=”</main>”;
+document.getElementById(“app”).innerHTML=html}
 </script>
 
 </body>
